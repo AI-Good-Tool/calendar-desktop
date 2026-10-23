@@ -20,10 +20,13 @@ jobs:
                 include:
                     - platform: macos-latest
                       target: aarch64-apple-darwin
+                      bundles: app,dmg
                     - platform: macos-latest
                       target: x86_64-apple-darwin
+                      bundles: app,dmg
                     - platform: windows-latest
                       target: x86_64-pc-windows-msvc
+                      bundles: nsis
 
         runs-on: ${{ matrix.platform }}
         steps:
@@ -67,7 +70,7 @@ jobs:
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
               with:
-                  args: --target ${{ matrix.target }}
+                  args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
                   includeUpdaterJson: true
                   tagName: v__VERSION__ # tauri-action replaces this with the app version
                   releaseName: '云小历 v__VERSION__'
@@ -94,4 +97,14 @@ jobs:
                   GH_REPO: ${{ github.repository }}
               run: |
                   version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+                  gh release download "v$version" --pattern latest.json --dir "$RUNNER_TEMP/updater"
+                  node - "$RUNNER_TEMP/updater/latest.json" "$version" <<'NODE'
+                  const fs = require('fs');
+                  const manifest = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+                  if (manifest.version.replace(/^v/, '') !== process.argv[3]) throw new Error('Incorrect updater version');
+                  for (const target of ['darwin-aarch64', 'darwin-x86_64', 'windows-x86_64']) {
+                    const entry = manifest.platforms[target];
+                    if (!entry?.url?.startsWith('https://') || !entry.signature) throw new Error(`Missing signed update: ${target}`);
+                  }
+                  NODE
                   gh release edit "v$version" --draft=false --latest
