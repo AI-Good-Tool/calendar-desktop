@@ -53,7 +53,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY0QUQ4Q0ZDQ0U1NjZCODIKUldTQ2ExYk8vSXl0OUxzT2pJNTZ1RDllK1dUTjdYQ0s5SHBQOElibi9wL2wwSHI1RmovdGw3U2cK",
       "endpoints": [
-        "https://github.com/vs2pk0/calendar-desktop/releases/latest/download/latest.json"
+        "https://github.com/AI-Good-Tool/calendar-desktop/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

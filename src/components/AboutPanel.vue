@@ -47,7 +47,7 @@ const { t } = useI18n();
 const { state, checkForUpdates, installUpdate } = updater;
 const version = ref(config.version);
 const linkError = ref('');
-const repo = 'https://github.com/vs2pk0/calendar-desktop';
+const repo = 'https://github.com/AI-Good-Tool/calendar-desktop';
 const links = [
     { key: 'author', url: 'https://github.com/vs2pk0', icon: UserOutlined },
     { key: 'repository', url: repo, icon: CodeOutlined },

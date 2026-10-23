@@ -10,7 +10,7 @@
 
 请备份该私钥；后续版本必须使用同一密钥签名。不要提交私钥到 Git，也不要更换公钥来修复签名错误。
 
-在 GitHub 仓库 vs2pk0/calendar-desktop 的 Settings → Secrets and variables → Actions 中配置：
+在 GitHub 仓库 AI-Good-Tool/calendar-desktop 的 Settings → Secrets and variables → Actions 中配置：
 
 - `TAURI_SIGNING_PRIVATE_KEY`：私钥文件的完整内容。
 - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`：本次生成时未设置密码，保持为空。
