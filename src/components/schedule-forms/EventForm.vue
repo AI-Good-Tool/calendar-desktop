@@ -4,16 +4,20 @@
         <div class="form-item">
             <div class="form-label">
                 <check-square-outlined />
-                <span>标题</span>
+                <span>{{ t('schedule.field.title') }}</span>
             </div>
-            <a-input v-model:value="localData.title" placeholder="请输入日程标题" @change="emitUpdate" />
+            <a-input
+                v-model:value="localData.title"
+                :placeholder="t('schedule.placeholder.eventTitle')"
+                @change="emitUpdate"
+            />
         </div>
 
         <!-- 全天开关 -->
         <div class="form-item">
             <div class="form-label">
                 <clock-circle-outlined />
-                <span>全天</span>
+                <span>{{ t('schedule.field.allDay') }}</span>
             </div>
             <a-switch v-model:checked="localData.isAllDay" @change="emitUpdate" />
         </div>
@@ -21,14 +25,14 @@
         <!-- 公历/农历 -->
         <div class="form-item">
             <a-radio-group v-model:value="localData.isLunar" @change="emitUpdate">
-                <a-radio :value="false">公历</a-radio>
-                <a-radio :value="true">农历</a-radio>
+                <a-radio :value="false">{{ t('schedule.field.solar') }}</a-radio>
+                <a-radio :value="true">{{ t('schedule.field.lunar') }}</a-radio>
             </a-radio-group>
         </div>
 
         <!-- 开始时间 -->
         <div class="form-item">
-            <div class="form-label">开始</div>
+            <div class="form-label">{{ t('schedule.field.start') }}</div>
             <a-space>
                 <a-date-picker
                     v-model:value="startDate"
@@ -48,7 +52,7 @@
 
         <!-- 结束时间 -->
         <div class="form-item">
-            <div class="form-label">结束</div>
+            <div class="form-label">{{ t('schedule.field.end') }}</div>
             <a-space>
                 <a-date-picker
                     v-model:value="endDate"
@@ -70,16 +74,16 @@
         <div class="form-item">
             <div class="form-label">
                 <bell-outlined />
-                <span>提醒</span>
+                <span>{{ t('schedule.field.reminder') }}</span>
             </div>
             <a-select v-model:value="localData.reminder" style="width: 100%" @change="emitUpdate">
-                <a-select-option value="none">不提醒</a-select-option>
-                <a-select-option value="开始时">开始时</a-select-option>
-                <a-select-option value="5分钟前">5分钟前</a-select-option>
-                <a-select-option value="15分钟前">15分钟前</a-select-option>
-                <a-select-option value="30分钟前">30分钟前</a-select-option>
-                <a-select-option value="1小时前">1小时前</a-select-option>
-                <a-select-option value="1天前">1天前</a-select-option>
+                <a-select-option value="none">{{ t('schedule.reminder.none') }}</a-select-option>
+                <a-select-option value="开始时">{{ t('schedule.reminder.atStart') }}</a-select-option>
+                <a-select-option value="5分钟前">{{ t('schedule.reminder.min5') }}</a-select-option>
+                <a-select-option value="15分钟前">{{ t('schedule.reminder.min15') }}</a-select-option>
+                <a-select-option value="30分钟前">{{ t('schedule.reminder.min30') }}</a-select-option>
+                <a-select-option value="1小时前">{{ t('schedule.reminder.hour1') }}</a-select-option>
+                <a-select-option value="1天前">{{ t('schedule.reminder.day1') }}</a-select-option>
             </a-select>
         </div>
 
@@ -87,25 +91,31 @@
         <div class="form-item">
             <div class="form-label">
                 <global-outlined />
-                <span>时区</span>
+                <span>{{ t('schedule.field.timezone') }}</span>
             </div>
-            <a-select v-model:value="localData.timezone" style="width: 100%" @change="emitUpdate">
-                <a-select-option value="GMT+8:00">(GMT+8:00) 北京</a-select-option>
-            </a-select>
+            <a-select
+                v-model:value="localData.timezone"
+                :options="timezoneOptions"
+                :filter-option="filterTimezone"
+                :placeholder="t('schedule.placeholder.searchTimezone')"
+                show-search
+                style="width: 100%"
+                @change="emitUpdate"
+            />
         </div>
 
         <!-- 重复 -->
         <div class="form-item">
             <div class="form-label">
                 <sync-outlined />
-                <span>重复</span>
+                <span>{{ t('schedule.field.repeat') }}</span>
             </div>
             <a-select v-model:value="localData.repeat" style="width: 100%" @change="emitUpdate">
-                <a-select-option value="none">一次性日程</a-select-option>
-                <a-select-option value="daily">每天</a-select-option>
-                <a-select-option value="weekly">每周</a-select-option>
-                <a-select-option value="monthly">每月</a-select-option>
-                <a-select-option value="yearly">每年</a-select-option>
+                <a-select-option value="none">{{ t('schedule.repeat.none') }}</a-select-option>
+                <a-select-option value="daily">{{ t('schedule.repeat.daily') }}</a-select-option>
+                <a-select-option value="weekly">{{ t('schedule.repeat.weekly') }}</a-select-option>
+                <a-select-option value="monthly">{{ t('schedule.repeat.monthly') }}</a-select-option>
+                <a-select-option value="yearly">{{ t('schedule.repeat.yearly') }}</a-select-option>
             </a-select>
         </div>
 
@@ -113,18 +123,27 @@
         <div class="form-item">
             <div class="form-label">
                 <environment-outlined />
-                <span>位置信息（可选）</span>
+                <span>{{ t('schedule.field.locationOptional') }}</span>
             </div>
-            <a-input v-model:value="localData.location" placeholder="请输入位置信息" @change="emitUpdate" />
+            <a-input
+                v-model:value="localData.location"
+                :placeholder="t('schedule.placeholder.location')"
+                @change="emitUpdate"
+            />
         </div>
 
         <!-- 备注 -->
         <div class="form-item">
             <div class="form-label">
                 <file-text-outlined />
-                <span>请添加备注（可选）</span>
+                <span>{{ t('schedule.field.noteOptional') }}</span>
             </div>
-            <a-textarea v-model:value="localData.note" :rows="3" placeholder="请添加备注" @change="emitUpdate" />
+            <a-textarea
+                v-model:value="localData.note"
+                :rows="3"
+                :placeholder="t('schedule.placeholder.note')"
+                @change="emitUpdate"
+            />
         </div>
     </div>
 </template>
@@ -141,6 +160,13 @@ import {
     EnvironmentOutlined,
     FileTextOutlined
 } from '@ant-design/icons-vue';
+import { useI18n } from 'vue-i18n';
+import { appTimeZone, timeZoneOptions } from '../../utils/timezone';
+
+const { t } = useI18n();
+
+// 旧版本写死的时区值，不是合法 IANA 名
+const LEGACY_BEIJING_TZ = 'GMT+8:00';
 
 const props = defineProps({
     formData: {
@@ -156,11 +182,24 @@ const localData = reactive({
     isAllDay: false,
     isLunar: false,
     reminder: '开始时',
-    timezone: 'GMT+8:00',
+    timezone: appTimeZone.value,
     repeat: 'none',
     location: '',
     note: ''
 });
+
+const timezoneOptions = computed(() =>
+    timeZoneOptions([localData.timezone])
+        .map((opt) =>
+            opt.value === LEGACY_BEIJING_TZ ? { ...opt, label: t('schedule.legacyBeijing'), offset: 480 } : opt
+        )
+        .sort((a, b) => a.offset - b.offset)
+);
+
+function filterTimezone(input, option) {
+    const keyword = input.trim().toLowerCase();
+    return `${option.label} ${option.value}`.toLowerCase().includes(keyword);
+}
 
 // 日期时间
 const startDate = ref(dayjs());
@@ -173,6 +212,9 @@ watch(
     () => props.formData,
     (data) => {
         Object.assign(localData, data);
+        if (!localData.timezone) {
+            localData.timezone = appTimeZone.value;
+        }
         if (data.date) {
             startDate.value = dayjs(data.date);
         }

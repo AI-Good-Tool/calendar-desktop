@@ -1,9 +1,9 @@
 <template>
     <div class="subscription-view">
         <div class="subscription-header">
-            <h2 class="title">全部订阅</h2>
+            <h2 class="title">{{ t('subscription.title') }}</h2>
             <div class="header-ops">
-                <a-button type="link" @click="goBack"> 订阅管理 <right-outlined /> </a-button>
+                <a-button type="link" @click="goBack"> {{ t('subscription.manage') }} <right-outlined /> </a-button>
             </div>
         </div>
 
@@ -24,7 +24,7 @@
                         :class="{ 'is-subscribed': item.isSubscribed }"
                         @click="toggleSub(item.id)"
                     >
-                        {{ item.isSubscribed ? '已订阅' : '订阅' }}
+                        {{ item.isSubscribed ? t('subscription.subscribed') : t('subscription.subscribe') }}
                     </a-button>
                 </div>
             </div>
@@ -34,6 +34,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
     CloudOutlined,
     ExperimentOutlined,
@@ -46,6 +47,7 @@ import {
 import subscriptionManager from '../utils/subscriptionManager';
 
 const emit = defineEmits(['back']);
+const { t } = useI18n();
 const subscriptionItems = computed(() => {
     return subscriptionManager.getAllItems();
 });

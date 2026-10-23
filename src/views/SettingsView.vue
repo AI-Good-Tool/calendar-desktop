@@ -1,21 +1,21 @@
 <template>
     <div class="settings-view-page">
         <div class="settings-header">
-            <h2 class="title">系统设置</h2>
+            <h2 class="title">{{ t('settings.title') }}</h2>
             <div class="header-ops">
-                <a-button type="link" @click="goBack"> <left-outlined /> 返回日历 </a-button>
+                <a-button type="link" @click="goBack"> <left-outlined /> {{ t('settings.backToCalendar') }} </a-button>
             </div>
         </div>
 
         <div class="settings-content">
             <a-tabs v-model:active-key="activeTab" type="card">
-                <a-tab-pane key="general" tab="常规设置">
+                <a-tab-pane key="general" :tab="t('settings.tabs.general')">
                     <div class="settings-section">
                         <a-form layout="vertical">
-                            <a-form-item label="开机自启动">
-                                <template #extra>登录系统后自动启动云小历（macOS 通过登录项 LaunchAgent 实现）</template>
+                            <a-form-item :label="t('settings.autoLaunch.label')">
+                                <template #extra>{{ t('settings.autoLaunch.extra') }}</template>
                                 <div class="setting-item-row">
-                                    <span>登录后自动启动</span>
+                                    <span>{{ t('settings.autoLaunch.toggle') }}</span>
                                     <a-switch
                                         v-model:checked="autoLaunch"
                                         :loading="autoLaunchLoading"
@@ -24,10 +24,35 @@
                                 </div>
                             </a-form-item>
 
-                            <a-form-item label="系统状态栏显示">
-                                <template #extra>在 macOS 顶部状态栏实时显示当前日期、时间和天气</template>
+                            <a-form-item :label="t('settings.timezone.label')">
+                                <template #extra>{{ t('settings.timezone.extra') }}</template>
                                 <div class="setting-item-row">
-                                    <span>显示时间与天气</span>
+                                    <span>
+                                        {{ t('settings.timezone.toggle') }}
+                                        <span class="timezone-hint">{{ zoneLabel(systemTimeZone) }}</span>
+                                    </span>
+                                    <a-switch
+                                        v-model:checked="settingsForm.followSystemTimeZone"
+                                        @change="handleFollowSystemTimeZone"
+                                    />
+                                </div>
+                                <div v-if="!settingsForm.followSystemTimeZone" class="timezone-select-row">
+                                    <span class="timezone-select-label">{{ t('settings.timezone.select') }}</span>
+                                    <a-select
+                                        :value="appTimeZone"
+                                        :options="zoneOptions"
+                                        :filter-option="filterTimeZone"
+                                        show-search
+                                        style="flex: 1; min-width: 0"
+                                        @change="handleCustomTimeZone"
+                                    />
+                                </div>
+                            </a-form-item>
+
+                            <a-form-item :label="t('settings.tray.label')">
+                                <template #extra>{{ t('settings.tray.extra') }}</template>
+                                <div class="setting-item-row">
+                                    <span>{{ t('settings.tray.toggle') }}</span>
                                     <a-switch v-model:checked="settingsForm.showTrayTime" @change="handleTrayToggle" />
                                 </div>
                                 <a-alert
@@ -47,51 +72,83 @@
                                                 :loading="trayRepairing"
                                                 @click="handleTrayRepair"
                                             >
-                                                一键修复
+                                                {{ t('settings.tray.repair') }}
                                             </a-button>
-                                            <a-button size="small" @click="openMenuBarSettings">打开系统设置</a-button>
-                                            <a-button size="small" @click="checkTrayRegistration">重新检测</a-button>
+                                            <a-button size="small" @click="openMenuBarSettings">{{
+                                                t('settings.tray.openSystemSettings')
+                                            }}</a-button>
+                                            <a-button size="small" @click="checkTrayRegistration">{{
+                                                t('settings.tray.recheck')
+                                            }}</a-button>
                                         </div>
                                     </template>
                                 </a-alert>
                             </a-form-item>
 
-                            <a-form-item label="显示格式">
-                                <template #extra>
-                                    支持自定义格式。占位符：{city} 城市, {temp} 温度, {weather} 天气。 时间格式参考
-                                    dayjs (如: HH:mm:ss)。
-                                </template>
+                            <a-form-item :label="t('settings.format.label')">
+                                <template #extra>{{ t('settings.format.extra') }}</template>
                                 <a-select
                                     v-model:value="settingsForm.trayDisplayFormat"
                                     @change="handleFormatChange"
-                                    placeholder="选择显示格式"
+                                    :placeholder="t('settings.format.placeholder')"
                                     style="width: 100%"
                                 >
-                                    <a-select-option value="M月D日 ddd HH:mm:ss - {city} {temp}°C {weather}">
-                                        日期+时间+天气 (最丰富)
+                                    <a-select-option v-for="p in TRAY_PRESETS" :key="p.id" :value="presetFormat(p)">
+                                        {{ t(`settings.format.presets.${p.id}`) }}
                                     </a-select-option>
-                                    <a-select-option value="M月D日 ddd HH:mm:ss"> 日期+星期+时间 </a-select-option>
-                                    <a-select-option value="HH:mm:ss"> 仅时间 (分秒) </a-select-option>
-                                    <a-select-option value="{city} {temp}°C {weather}"> 仅天气信息 </a-select-option>
                                 </a-select>
                                 <a-input
                                     v-model:value="settingsForm.trayDisplayFormat"
-                                    placeholder="或输入自定义格式内容"
+                                    :placeholder="t('settings.format.customPlaceholder')"
                                     style="margin-top: 12px"
                                     @change="handleFormatInputChange"
                                 />
                             </a-form-item>
+
+                            <a-form-item :label="t('settings.tray2.label')">
+                                <template #extra>{{ t('settings.tray2.extra') }}</template>
+                                <div class="setting-item-row">
+                                    <span>{{ t('settings.tray2.toggle') }}</span>
+                                    <a-switch v-model:checked="settingsForm.showTray2" @change="handleTray2Toggle" />
+                                </div>
+                                <div v-if="settingsForm.showTray2" class="timezone-select-row">
+                                    <span class="timezone-select-label">{{ t('settings.tray2.select') }}</span>
+                                    <a-select
+                                        :value="settingsForm.tray2TimeZone"
+                                        :options="zoneOptions"
+                                        :filter-option="filterTimeZone"
+                                        show-search
+                                        style="flex: 1; min-width: 0"
+                                        @change="handleTray2TimeZone"
+                                    />
+                                </div>
+                                <template v-if="settingsForm.showTray2">
+                                    <a-select
+                                        v-model:value="settingsForm.tray2Format"
+                                        @change="handleTray2FormatChange"
+                                        :placeholder="t('settings.format.placeholder')"
+                                        style="width: 100%; margin-top: 12px"
+                                    >
+                                        <a-select-option v-for="p in TRAY2_PRESETS" :key="p.id" :value="presetFormat(p)">
+                                            {{ t(`settings.format.presets.${p.id}`) }}
+                                        </a-select-option>
+                                    </a-select>
+                                    <a-input
+                                        v-model:value="settingsForm.tray2Format"
+                                        :placeholder="t('settings.tray2.formatPlaceholder')"
+                                        style="margin-top: 12px"
+                                        @change="handleTray2FormatInput"
+                                    />
+                                </template>
+                            </a-form-item>
                         </a-form>
                     </div>
                 </a-tab-pane>
-                <a-tab-pane key="api" tab="API 配置">
+                <a-tab-pane key="api" :tab="t('settings.tabs.api')">
                     <div class="settings-section">
                         <a-form layout="vertical">
-                            <a-form-item label="天气数据源">
-                                <template #extra>
-                                    免费天气接口（来源：rinuo.com/free/weather），可随时切换；
-                                    带 🔑 的源需要自行注册并填写 API Key。
-                                </template>
+                            <a-form-item :label="t('settings.weather.label')">
+                                <template #extra>{{ t('settings.weather.extra') }}</template>
                                 <a-select
                                     v-model:value="settingsForm.weatherProvider"
                                     @change="handleWeatherProviderChange"
@@ -104,24 +161,29 @@
                                 <template v-if="currentProviderNeedKey">
                                     <a-input
                                         v-model:value="settingsForm.weatherKeys[settingsForm.weatherProvider]"
-                                        placeholder="请输入该数据源的 API Key"
+                                        :placeholder="t('settings.weather.keyPlaceholder')"
                                         style="margin-top: 12px"
                                         @change="handleWeatherKeyChange"
                                     />
                                     <div style="margin-top: 6px; font-size: 12px">
-                                    <a :href="currentProviderDoc" target="_blank">前往 {{ currentProviderName }} 注册获取 Key →</a>
+                                    <a :href="currentProviderDoc" target="_blank">{{
+                                        t('settings.weather.getKey', { name: currentProviderName })
+                                    }}</a>
                                     </div>
                                 </template>
                             </a-form-item>
 
                             <a-divider />
 
-                            <a-form-item label="星座运势 API">
+                            <a-form-item :label="t('settings.zodiac.label')">
                                 <template #extra>
-                                    用于右侧边栏的星座运势卡片。
-                                    <a href="https://xxapi.cn/doc/horoscope" target="_blank">查看 xxapi.cn 文档</a>
+                                    {{ t('settings.zodiac.extra') }}
+                                    <a href="https://xxapi.cn/doc/horoscope" target="_blank">{{ t('settings.zodiac.doc') }}</a>
                                 </template>
-                                <a-input v-model:value="settingsForm.zodiacApi" placeholder="接口地址" />
+                                <a-input
+                                    v-model:value="settingsForm.zodiacApi"
+                                    :placeholder="t('settings.zodiac.apiPlaceholder')"
+                                />
                                 <a-input
                                     v-model:value="settingsForm.zodiacKey"
                                     placeholder="API Key"
@@ -131,63 +193,53 @@
 
                             <a-divider />
 
-                            <a-form-item label="节假日 API (timor.tech)">
+                            <a-form-item :label="t('settings.holiday.label')">
                                 <template #extra>
-                                    用于日历下标显示节假日和调休信息。
-                                    <a href="https://timor.tech/api/holiday/" target="_blank">查看节假日文档</a>
+                                    {{ t('settings.holiday.extra') }}
+                                    <a href="https://timor.tech/api/holiday/" target="_blank">{{ t('settings.holiday.doc') }}</a>
                                 </template>
-                                <a-input v-model:value="settingsForm.holidayApi" placeholder="年接口地址" />
+                                <a-input
+                                    v-model:value="settingsForm.holidayApi"
+                                    :placeholder="t('settings.holiday.apiPlaceholder')"
+                                />
                             </a-form-item>
 
                             <div class="form-actions">
-                                <a-button type="primary" size="large" @click="saveSettings">保存配置</a-button>
-                                <a-button style="margin-left: 12px" @click="resetSettings">重置为默认</a-button>
+                                <a-button type="primary" size="large" @click="saveSettings">{{
+                                    t('settings.actions.save')
+                                }}</a-button>
+                                <a-button style="margin-left: 12px" @click="resetSettings">{{
+                                    t('settings.actions.reset')
+                                }}</a-button>
                             </div>
                         </a-form>
                     </div>
                 </a-tab-pane>
 
-                <a-tab-pane key="data" tab="数据管理">
+                <a-tab-pane key="data" :tab="t('settings.tabs.data')">
                     <div class="settings-section data-section">
                         <div class="data-card danger">
                             <div class="card-info">
-                                <div class="card-title">清除日程数据库</div>
-                                <div class="card-desc">
-                                    这将永久删除 SQLite 数据库中保存的所有日程、待办、生日等事项。此操作不可撤销。
-                                </div>
+                                <div class="card-title">{{ t('settings.data.dbTitle') }}</div>
+                                <div class="card-desc">{{ t('settings.data.dbDesc') }}</div>
                             </div>
-                            <a-button danger @click="clearDatabase">清除所有数据</a-button>
+                            <a-button danger @click="clearDatabase">{{ t('settings.data.dbButton') }}</a-button>
                         </div>
 
                         <a-divider />
 
                         <div class="data-card">
                             <div class="card-info">
-                                <div class="card-title">清除本地缓存 (Local Storage)</div>
-                                <div class="card-desc">
-                                    重置所有订阅状态、主题设置、搜索历史及 API 配置。执行后应用将自动刷新。
-                                </div>
+                                <div class="card-title">{{ t('settings.data.cacheTitle') }}</div>
+                                <div class="card-desc">{{ t('settings.data.cacheDesc') }}</div>
                             </div>
-                            <a-button danger ghost @click="clearCache">重置应用</a-button>
+                            <a-button danger ghost @click="clearCache">{{ t('settings.data.cacheButton') }}</a-button>
                         </div>
                     </div>
                 </a-tab-pane>
 
-                <a-tab-pane key="about" tab="关于">
-                    <div class="settings-section about-section">
-                        <div class="app-logo">
-                            <img
-                                src="/logo.png"
-                                alt="logo"
-                                style="width: 80px; height: 80px; object-fit: contain; border-radius: 16px"
-                            />
-                        </div>
-                        <h2 class="app-name">云小历</h2>
-                        <div class="app-version">Version 1.0.0</div>
-                        <div class="app-desc">
-                            一个基于 Tauri + Vue 3 的轻量级桌面日历应用，支持农历、节假日、日程提醒及多种生活订阅服务。
-                        </div>
-                    </div>
+                <a-tab-pane key="about" :tab="t('settings.tabs.about')">
+                    <AboutPanel v-if="activeTab === 'about'" />
                 </a-tab-pane>
             </a-tabs>
         </div>
@@ -195,8 +247,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, createVNode, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, createVNode, computed, watch } from 'vue';
+import AboutPanel from '../components/AboutPanel.vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { message, Modal } from 'ant-design-vue';
 import { LeftOutlined, ExclamationCircleOutlined, CalendarFilled } from '@ant-design/icons-vue';
 import settingsManager from '../utils/settingsManager';
@@ -204,9 +258,26 @@ import scheduleManager from '../utils/scheduleManager';
 import { enable as enableAutostart, disable as disableAutostart, isEnabled as isAutostartEnabled } from '@tauri-apps/plugin-autostart';
 import { invoke } from '@tauri-apps/api/core';
 import { WEATHER_PROVIDERS } from '../utils/weatherManager';
+import { TRAY_PRESETS, TRAY2_PRESETS, presetFormat, localizeTrayFormat } from '../utils/trayFormats';
+import {
+    appTimeZone,
+    systemTimeZone,
+    followSystemTimeZone,
+    customTimeZone,
+    setFollowSystemTimeZone,
+    setCustomTimeZone,
+    timeZoneOptions,
+    zoneOffsetMinutes,
+    formatGmtOffset,
+    zoneCityName
+} from '../utils/timezone';
 
 const router = useRouter();
-const activeTab = ref('api');
+const { t } = useI18n();
+const route = useRoute();
+const activeTab = ref(route.query.tab === 'about' ? 'about' : 'api');
+watch(() => route.query.tab, (tab) => { if (tab === 'about') activeTab.value = 'about'; });
+watch(activeTab, (tab) => router.replace({ query: { ...route.query, tab } }));
 
 // 天气数据源切换
 const weatherProviders = WEATHER_PROVIDERS;
@@ -220,12 +291,39 @@ const currentProviderName = computed(() => currentProvider.value.name);
 function handleWeatherProviderChange(value) {
     settingsManager.set('weatherProvider', value);
     const p = weatherProviders.find((x) => x.id === value);
-    message.success(`天气数据源已切换为 ${p ? p.name : value}`);
+    message.success(t('settings.weather.switched', { name: p ? p.name : value }));
 }
 
 function handleWeatherKeyChange() {
     settingsManager.set('weatherKeys', { ...settingsForm.value.weatherKeys });
-    message.success('天气 API Key 已保存');
+    message.success(t('settings.weather.keySaved'));
+}
+
+// 时区：跟随系统，或使用固定时区（未手动选择时按语言默认：中文上海、英文纽约）
+const zoneOptions = computed(() => timeZoneOptions());
+
+function zoneLabel(tz) {
+    return `(${formatGmtOffset(zoneOffsetMinutes(tz))}) ${zoneCityName(tz)}`;
+}
+
+function filterTimeZone(input, option) {
+    const q = input.trim().toLowerCase();
+    return option.label.toLowerCase().includes(q) || String(option.value).toLowerCase().includes(q);
+}
+
+function handleFollowSystemTimeZone(checked) {
+    setFollowSystemTimeZone(checked);
+    message.success(
+        checked
+            ? t('settings.timezone.followOn')
+            : t('settings.timezone.followOff', { zone: zoneLabel(appTimeZone.value) })
+    );
+}
+
+function handleCustomTimeZone(tz) {
+    setCustomTimeZone(tz);
+    settingsForm.value.customTimeZone = tz;
+    message.success(t('settings.timezone.changed', { zone: zoneLabel(tz) }));
 }
 
 // 开机自启动（状态直接读取系统，不存 localStorage）
@@ -248,11 +346,11 @@ async function handleAutoLaunchToggle(checked) {
         } else {
             await disableAutostart();
         }
-        message.success(checked ? '已开启开机自启动' : '已关闭开机自启动');
+        message.success(checked ? t('settings.autoLaunch.enabled') : t('settings.autoLaunch.disabled'));
     } catch (e) {
         console.error('设置自启动失败:', e);
         autoLaunch.value = !checked; // 失败回滚
-        message.error('设置失败，请重试');
+        message.error(t('settings.autoLaunch.failed'));
     } finally {
         autoLaunchLoading.value = false;
     }
@@ -265,27 +363,86 @@ const settingsForm = ref({
     zodiacKey: '',
     holidayApi: '',
     showTrayTime: true,
+    showTray2: false,
+    tray2TimeZone: 'America/New_York',
+    tray2Format: 'HH:mm:ss',
+    followSystemTimeZone: true,
+    customTimeZone: '',
     trayDisplayFormat: ''
 });
 
 function loadSettings() {
-    settingsForm.value = settingsManager.getAll();
+    const all = settingsManager.getAll();
+    // 预设格式需换成当前语言版本，下拉才能选中
+    all.trayDisplayFormat = localizeTrayFormat(all.trayDisplayFormat);
+    settingsForm.value = all;
 }
 
 function saveSettings() {
     settingsManager.setAll(settingsForm.value);
-    message.success('配置已保存');
+    message.success(t('settings.actions.saved'));
 }
 
 function handleTrayToggle(checked) {
     settingsManager.set('showTrayTime', checked);
-    message.success(checked ? '状态栏显示已开启' : '状态栏显示已关闭');
+    message.success(checked ? t('settings.tray.enabled') : t('settings.tray.disabled'));
     if (checked) {
         // ControlCenter 需要一点时间完成登记判定
         setTimeout(checkTrayRegistration, 1500);
     } else {
         trayIssue.value = null;
     }
+}
+
+// 第二状态栏（菜单2）：第二时区时间
+async function handleTray2Toggle(checked) {
+    settingsManager.set('showTray2', checked);
+    if (checked && isMacOS) {
+        // macOS 26 只显示"随应用启动创建"的状态栏项；本次启动没带菜单2 时需重启才能显示
+        let displayable = true;
+        try {
+            displayable = await invoke('tray2_displayable');
+        } catch (e) {
+            /* 非 macOS 忽略 */
+        }
+        if (!displayable) {
+            Modal.confirm({
+                title: t('settings.tray2.restartTitle'),
+                content: t('settings.tray2.restartContent'),
+                okText: t('settings.tray2.restartNow'),
+                cancelText: t('settings.tray2.restartLater'),
+                centered: true,
+                onOk: async () => {
+                    try {
+                        await invoke('restart_app');
+                    } catch (e) {
+                        console.error('重启失败:', e);
+                    }
+                }
+            });
+            return;
+        }
+    }
+    message.success(checked ? t('settings.tray2.enabled') : t('settings.tray2.disabled'));
+    if (checked) {
+        setTimeout(checkTrayRegistration, 1500);
+    }
+}
+
+function handleTray2TimeZone(tz) {
+    settingsForm.value.tray2TimeZone = tz;
+    settingsManager.set('tray2TimeZone', tz);
+    message.success(t('settings.timezone.changed', { zone: zoneLabel(tz) }));
+}
+
+function handleTray2FormatChange(value) {
+    settingsManager.set('tray2Format', value);
+    message.success(t('settings.format.updated'));
+}
+
+function handleTray2FormatInput(e) {
+    settingsManager.set('tray2Format', e.target.value);
+    message.success(t('settings.format.updated'));
 }
 
 // macOS 26（Tahoe）状态栏归属诊断：
@@ -303,17 +460,16 @@ async function checkTrayRegistration() {
         if (!reg || !reg.available) return;
         if (reg.blocked_by && reg.blocked_by.length > 0) {
             trayIssue.value = {
-                title: 'macOS 未显示云小历的状态栏项',
-                desc:
-                    `macOS 把云小历的状态栏项归属到了「${reg.blocked_by.join('、')}」，而该应用已被禁止在菜单栏显示，` +
-                    '云小历因此被一并屏蔽（通常是从终端或开发工具直接启动云小历导致）。点击"一键修复"解除关联并重启控制中心；' +
-                    '之后请通过 Finder / 启动台 / Dock 打开云小历。',
+                title: t('settings.tray.blockedTitle'),
+                desc: t('settings.tray.blockedDesc', {
+                    apps: reg.blocked_by.join(t('settings.tray.appSeparator'))
+                }),
                 repairable: true
             };
         } else if (reg.allowed === false) {
             trayIssue.value = {
-                title: 'macOS 未允许云小历在菜单栏显示',
-                desc: '请在 系统设置 → 菜单栏 → "允许在菜单栏中显示" 中开启云小历，或点击"一键修复"。',
+                title: t('settings.tray.notAllowedTitle'),
+                desc: t('settings.tray.notAllowedDesc'),
                 repairable: true
             };
         }
@@ -329,7 +485,7 @@ async function handleTrayRepair() {
         message.success(result);
         setTimeout(checkTrayRegistration, 2000);
     } catch (e) {
-        message.error(`修复失败：${e}`);
+        message.error(t('settings.tray.repairFailed', { error: String(e) }));
     } finally {
         trayRepairing.value = false;
     }
@@ -339,13 +495,13 @@ async function openMenuBarSettings() {
     try {
         await invoke('open_menu_bar_settings');
     } catch (e) {
-        message.error(`打开系统设置失败：${e}`);
+        message.error(t('settings.tray.openSettingsFailed', { error: String(e) }));
     }
 }
 
 function handleFormatChange(value) {
     settingsManager.set('trayDisplayFormat', value);
-    message.success('显示格式已更新');
+    message.success(t('settings.format.updated'));
 }
 
 function handleFormatInputChange(e) {
@@ -354,12 +510,15 @@ function handleFormatInputChange(e) {
 
 function resetSettings() {
     Modal.confirm({
-        title: '确定要重置配置吗？',
-        content: '这将把所有 API 地址和 Key 还原为默认值。',
+        title: t('settings.actions.resetTitle'),
+        content: t('settings.actions.resetContent'),
         onOk() {
             settingsManager.reset();
+            // 同步到时区模块的响应式状态，否则重置后界面仍按旧时区显示
+            followSystemTimeZone.value = settingsManager.get('followSystemTimeZone') !== false;
+            customTimeZone.value = settingsManager.get('customTimeZone') || '';
             loadSettings();
-            message.success('已恢复默认配置');
+            message.success(t('settings.actions.resetDone'));
         }
     });
 }
@@ -370,17 +529,17 @@ function goBack() {
 
 function clearDatabase() {
     Modal.confirm({
-        title: '确定要清除所有日程吗？',
+        title: t('settings.data.dbConfirmTitle'),
         icon: createVNode(ExclamationCircleOutlined, { style: 'color: #ff4d4f' }),
-        content: '此操作将从本地数据库中永久删除所有日程记录。',
-        okText: '确定清除',
+        content: t('settings.data.dbConfirmContent'),
+        okText: t('settings.data.dbConfirmOk'),
         okType: 'danger',
         onOk: async () => {
             try {
                 await scheduleManager.clearAll();
-                message.success('数据库已清空');
+                message.success(t('settings.data.dbCleared'));
             } catch (e) {
-                message.error('清除失败');
+                message.error(t('settings.data.dbClearFailed'));
             }
         }
     });
@@ -388,10 +547,10 @@ function clearDatabase() {
 
 function clearCache() {
     Modal.confirm({
-        title: '确定要重置应用吗？',
+        title: t('settings.data.cacheConfirmTitle'),
         icon: createVNode(ExclamationCircleOutlined, { style: 'color: #ff4d4f' }),
-        content: '此操作将清除本地存储的所有配置、订阅和偏好设置。重置后应用将重启。',
-        okText: '确定重置',
+        content: t('settings.data.cacheConfirmContent'),
+        okText: t('settings.data.cacheConfirmOk'),
         okType: 'danger',
         onOk() {
             localStorage.clear();
@@ -454,6 +613,24 @@ onMounted(() => {
     padding: 12px 16px;
     background: #f9f9f9;
     border-radius: 8px;
+}
+
+.timezone-select-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.timezone-select-label {
+    flex-shrink: 0;
+    color: #333;
+}
+
+.timezone-hint {
+    margin-left: 8px;
+    font-size: 12px;
+    color: #999;
 }
 
 .data-section {

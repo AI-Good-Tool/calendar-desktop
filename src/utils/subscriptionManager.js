@@ -1,53 +1,78 @@
 import { ref } from 'vue';
+import { t } from '../i18n';
 
 const STORAGE_KEY = 'calendar_subscriptions';
 
-// 所有可用的订阅项
+// 所有可用的订阅项（name/desc 为随语言切换的 getter，id 为存储标识不变）
 export const AVAILABLE_SUBSCRIPTIONS = [
     {
         id: 'weather',
-        name: '天气预报',
-        desc: '预报天气和空气质量',
+        get name() {
+            return t('subscriptionData.weather.name');
+        },
+        get desc() {
+            return t('subscriptionData.weather.desc');
+        },
         icon: 'cloud-outlined',
         color: '#1890ff',
         bg: '#e6f7ff'
     },
     {
         id: 'lunar',
-        name: '农历详情',
-        desc: '农历年、月、日详情',
+        get name() {
+            return t('subscriptionData.lunar.name');
+        },
+        get desc() {
+            return t('subscriptionData.lunar.desc');
+        },
         icon: 'info-circle-outlined',
         color: '#87d068',
         bg: '#f6ffed'
     },
     {
         id: 'huangli',
-        name: '黄历运势',
-        desc: '每日宜忌，早知道',
+        get name() {
+            return t('subscriptionData.huangli.name');
+        },
+        get desc() {
+            return t('subscriptionData.huangli.desc');
+        },
         icon: 'experiment-outlined',
         color: '#fa8c16',
         bg: '#fff7e6'
     },
     {
         id: 'zodiac',
-        name: '星座运势',
-        desc: '你专属的星座运势...',
+        get name() {
+            return t('subscriptionData.zodiac.name');
+        },
+        get desc() {
+            return t('subscriptionData.zodiac.desc');
+        },
         icon: 'rocket-outlined',
         color: '#722ed1',
         bg: '#f9f0ff'
     },
     {
         id: 'worldClock',
-        name: '世界时钟',
-        desc: '地球上其它城市现...',
+        get name() {
+            return t('subscriptionData.worldClock.name');
+        },
+        get desc() {
+            return t('subscriptionData.worldClock.desc');
+        },
         icon: 'global-outlined',
         color: '#13c2c2',
         bg: '#e6fffb'
     },
     {
         id: 'schedule',
-        name: '日程安排',
-        desc: '管理并提醒您的每日日程',
+        get name() {
+            return t('subscriptionData.schedule.name');
+        },
+        get desc() {
+            return t('subscriptionData.schedule.desc');
+        },
         icon: 'calendar-outlined',
         color: '#1890ff',
         bg: '#e6f7ff'

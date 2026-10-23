@@ -1,0 +1,25 @@
+Tool: built-in image_gen
+
+DESIGN DIRECTION
+New cloud-calendar silhouette; preserve reference blue/white palette only. The previous three-stroke mark is intentionally replaced.
+
+ICON PROMPT
+Use case: logo-brand
+Asset type: new production desktop app icon for a lightweight cloud/calendar app.
+Primary request: Design a COMPLETELY NEW logo silhouette. Keep ONLY the reference's periwinkle blue and white colors. The previous three stacked horizontal arcs / smile mark must be abandoned entirely.
+Input image 1: COLOR REFERENCE ONLY. DO NOT use or echo its glyph, smile, horizontal bars or composition.
+Design concept: one elegant WHITE CLOUD-CALENDAR emblem centered on a periwinkle-blue rounded-square tile. Invent a coherent single emblem combining a soft three-lobed cloud upper silhouette with a compact calendar-page body and one clever folded lower-right page corner. Use blue negative space for a small simple 2-by-2 arrangement of calendar date apertures, not text. The overall emblem is a single connected white shape; calendar page and cloud merge seamlessly. The fold can be suggested by one clean diagonal blue cutout and a tiny pale-blue triangular underside. No calendar binder rings, no plus sign, no clock, no checkmark.
+Visual hierarchy: bold simple recognizable overall silhouette, refined curvature, soft friendly clean design, very few geometric elements, crisp readability at 32px. The emblem occupies 58% of the tile width, optically centered with generous space around it.
+Color palette: main tile approximately #5877FF with a very subtle #6D8AFF to #4D6CF3 blue gradient; emblem white with only tiny soft depth cues. No additional colors.
+Style: modern minimal premium app icon with a soft satin finish, gentle bevel limited to outer blue tile, almost-flat white emblem, restrained highlights. Orthographic front view, exact centered symmetry of tile, no perspective.
+Composition: ONE standalone square icon; blue rounded-square tile occupies 88% of canvas, equal margins.
+Background: true transparent alpha outside blue tile, perfectly clean smooth contour, no shadow or speckled pixels beyond the contour.
+Avoid: the old three-bar glyph, smile face, stacked arcs, letterforms, words, dates, numbers, labels, board layouts, extra objects, heavy 3D, glass, neon glow, stray pixels, noisy edges.
+
+LOGO PROMPT (final white-background version)
+Use case: logo-brand
+Asset type: standalone logo on white, matching the new cloud-calendar desktop app icon.
+Input image 1 is the NEW approved-direction cloud-calendar emblem reference, not the previous old glyph.
+Primary request: Keep this exact blue cloud-calendar silhouette and proportions. Present the blue symbol cleanly on a PURE SOLID WHITE background. Change all four calendar window holes and the small diagonal page-fold cutout to PURE SOLID WHITE. Remove every stray pixel, fleck, texture and irregular patch. The graphic is crisp vector-like geometry rendered as raster.
+Colors: flat periwinkle blue #5877FF for the body, a single pale-blue triangular page fold, pure white #FFFFFF everywhere else. No gradients, shadows, depth, grain or blur.
+Composition: one centered standalone mark occupying 76% of square image; no blue square tile, no lettering, no explanatory text. Identical new cloud-calendar construction: three-lobed upper cloud, rounded page base, 2x2 calendar apertures, bottom-right page fold. Output opaque white background, do NOT add transparency or checkerboard.

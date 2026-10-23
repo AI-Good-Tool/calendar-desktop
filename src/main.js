@@ -11,22 +11,15 @@ import App from './App.vue';
 import Antd from 'ant-design-vue';
 import 'ant-design-vue/dist/reset.css';
 import './style.css';
-
-// Import dayjs locale
-import dayjs from 'dayjs';
-import 'dayjs/locale/zh-cn';
-dayjs.locale('zh-cn');
-
-// Import Ant Design locale
-import zhCN from 'ant-design-vue/es/locale/zh_CN';
+import i18n, { initLocale } from './i18n';
+import './utils/timezone';
 
 import router from './router';
 
 const app = createApp(App);
 app.use(Antd);
+app.use(i18n);
 app.use(router);
 
-// 配置全局中文
-app.provide('locale', zhCN);
-
-app.mount('#app');
+// 先确定语言（跟随系统 / 应用级语言设置）再挂载，避免首屏闪现另一种语言
+initLocale().finally(() => app.mount('#app'));

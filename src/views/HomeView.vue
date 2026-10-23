@@ -11,24 +11,24 @@
                     <div class="tool-icon" style="background: #ff7875">
                         <calendar-outlined style="color: white" />
                     </div>
-                    <span>公农历转换</span>
+                    <span>{{ t('home.converter') }}</span>
                 </div>
                 <div class="tool-item" @click="openTool('holiday-list')">
                     <div class="tool-icon" style="background: #ff9c6e">
                         <gift-outlined style="color: white" />
                     </div>
-                    <span>节日大全</span>
+                    <span>{{ t('home.holidays') }}</span>
                 </div>
                 <div class="tool-item" @click="openTool('date-calculator')">
                     <div class="tool-icon" style="background: #9254de">
                         <calculator-outlined style="color: white" />
                     </div>
-                    <span>日期计算</span>
+                    <span>{{ t('home.dateCalc') }}</span>
                 </div>
             </div>
             <div class="tool-item" @click="openAllTools">
                 <div class="tool-icon custom-more">...</div>
-                <span>全部</span>
+                <span>{{ t('home.all') }}</span>
             </div>
         </div>
     </div>
@@ -37,6 +37,7 @@
 <script setup>
 import { ref, defineExpose } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import CalendarView from '../components/CalendarView.vue';
 import { CalendarOutlined, GiftOutlined, CalculatorOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
@@ -44,6 +45,7 @@ import dayjs from 'dayjs';
 const currentDate = ref(dayjs());
 const calendarRef = ref(null);
 const router = useRouter();
+const { t } = useI18n();
 
 const emit = defineEmits(['select', 'open-tool']);
 

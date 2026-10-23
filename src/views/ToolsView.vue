@@ -15,8 +15,8 @@
                         <calendar-outlined />
                     </div>
                     <div class="tool-info">
-                        <h3 class="tool-name">公农历转换</h3>
-                        <p class="tool-desc">公历与农历互相转换</p>
+                        <h3 class="tool-name">{{ t('toolsView.converter.name') }}</h3>
+                        <p class="tool-desc">{{ t('toolsView.converter.desc') }}</p>
                     </div>
                 </div>
 
@@ -25,8 +25,8 @@
                         <gift-outlined />
                     </div>
                     <div class="tool-info">
-                        <h3 class="tool-name">节日大全</h3>
-                        <p class="tool-desc">查询一年的所有节日</p>
+                        <h3 class="tool-name">{{ t('toolsView.holidays.name') }}</h3>
+                        <p class="tool-desc">{{ t('toolsView.holidays.desc') }}</p>
                     </div>
                 </div>
 
@@ -35,8 +35,8 @@
                         <calculator-outlined />
                     </div>
                     <div class="tool-info">
-                        <h3 class="tool-name">日期计算</h3>
-                        <p class="tool-desc">计算日期间隔，推算几天之后的日期</p>
+                        <h3 class="tool-name">{{ t('toolsView.dateCalc.name') }}</h3>
+                        <p class="tool-desc">{{ t('toolsView.dateCalc.desc') }}</p>
                     </div>
                 </div>
 
@@ -45,8 +45,8 @@
                         <clock-circle-outlined />
                     </div>
                     <div class="tool-info">
-                        <h3 class="tool-name">倒数日</h3>
-                        <p class="tool-desc">距离重要日子还有多久</p>
+                        <h3 class="tool-name">{{ t('toolsView.countdown.name') }}</h3>
+                        <p class="tool-desc">{{ t('toolsView.countdown.desc') }}</p>
                     </div>
                 </div>
 
@@ -55,8 +55,8 @@
                         <calendar-two-tone />
                     </div>
                     <div class="tool-info">
-                        <h3 class="tool-name">万年历</h3>
-                        <p class="tool-desc">查看任意年份的日历</p>
+                        <h3 class="tool-name">{{ t('toolsView.perpetual.name') }}</h3>
+                        <p class="tool-desc">{{ t('toolsView.perpetual.desc') }}</p>
                     </div>
                 </div>
 
@@ -65,8 +65,8 @@
                         <star-outlined />
                     </div>
                     <div class="tool-info">
-                        <h3 class="tool-name">吉日查询</h3>
-                        <p class="tool-desc">查询黄道吉日</p>
+                        <h3 class="tool-name">{{ t('toolsView.luckyDay.name') }}</h3>
+                        <p class="tool-desc">{{ t('toolsView.luckyDay.desc') }}</p>
                     </div>
                 </div>
             </div>
@@ -82,6 +82,7 @@
 <script setup>
 import { ref, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
     CalendarOutlined,
     GiftOutlined,
@@ -100,6 +101,7 @@ import PerpetualCalendar from '../components/tools/PerpetualCalendar.vue';
 import LuckyDay from '../components/tools/LuckyDay.vue';
 
 const router = useRouter();
+const { t } = useI18n();
 const toolModalVisible = ref(false);
 const currentToolTitle = ref('');
 const currentToolComponent = shallowRef(null);
@@ -107,27 +109,27 @@ const currentToolComponent = shallowRef(null);
 const openTool = (toolName) => {
     switch (toolName) {
         case 'calendar-converter':
-            currentToolTitle.value = '公农历转换';
+            currentToolTitle.value = t('toolsView.converter.name');
             currentToolComponent.value = CalendarConverter;
             break;
         case 'holiday-list':
-            currentToolTitle.value = '节日大全';
+            currentToolTitle.value = t('toolsView.holidays.name');
             currentToolComponent.value = HolidayList;
             break;
         case 'date-calculator':
-            currentToolTitle.value = '日期计算';
+            currentToolTitle.value = t('toolsView.dateCalc.name');
             currentToolComponent.value = DateCalculator;
             break;
         case 'countdown':
-            currentToolTitle.value = '倒数日';
+            currentToolTitle.value = t('toolsView.countdown.name');
             currentToolComponent.value = Countdown;
             break;
         case 'perpetual-calendar':
-            currentToolTitle.value = '万年历';
+            currentToolTitle.value = t('toolsView.perpetual.name');
             currentToolComponent.value = PerpetualCalendar;
             break;
         case 'lucky-day':
-            currentToolTitle.value = '吉日查询';
+            currentToolTitle.value = t('toolsView.luckyDay.name');
             currentToolComponent.value = LuckyDay;
             break;
         default:

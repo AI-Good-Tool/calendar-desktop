@@ -1,14 +1,18 @@
 <template>
     <div class="anniversary-form">
         <div class="form-item">
-            <div class="form-label">内容</div>
-            <a-input v-model:value="localData.title" placeholder="请输入纪念日标题" @change="emitUpdate" />
+            <div class="form-label">{{ t('schedule.field.content') }}</div>
+            <a-input
+                v-model:value="localData.title"
+                :placeholder="t('schedule.placeholder.anniversaryTitle')"
+                @change="emitUpdate"
+            />
         </div>
         <div class="form-item">
-            <div class="form-label">时间</div>
+            <div class="form-label">{{ t('schedule.field.time') }}</div>
             <a-radio-group v-model:value="localData.isLunar" @change="emitUpdate">
-                <a-radio :value="false">公历</a-radio>
-                <a-radio :value="true">农历</a-radio>
+                <a-radio :value="false">{{ t('schedule.field.solar') }}</a-radio>
+                <a-radio :value="true">{{ t('schedule.field.lunar') }}</a-radio>
             </a-radio-group>
         </div>
         <div class="form-item">
@@ -20,11 +24,11 @@
             />
         </div>
         <div class="form-item">
-            <div class="form-label">提醒</div>
+            <div class="form-label">{{ t('schedule.field.reminder') }}</div>
             <a-select v-model:value="localData.reminder" style="width: 100%" @change="emitUpdate">
-                <a-select-option value="开始时">开始时</a-select-option>
-                <a-select-option value="1天前">1天前</a-select-option>
-                <a-select-option value="3天前">3天前</a-select-option>
+                <a-select-option value="开始时">{{ t('schedule.reminder.atStart') }}</a-select-option>
+                <a-select-option value="1天前">{{ t('schedule.reminder.day1') }}</a-select-option>
+                <a-select-option value="3天前">{{ t('schedule.reminder.day3') }}</a-select-option>
             </a-select>
         </div>
     </div>
@@ -33,6 +37,9 @@
 <script setup>
 import { ref, reactive, watch } from 'vue';
 import dayjs from 'dayjs';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({ formData: { type: Object, required: true } });
 const emit = defineEmits(['update']);

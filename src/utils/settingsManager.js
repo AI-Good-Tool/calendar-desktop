@@ -17,6 +17,13 @@ const DEFAULT_SETTINGS = {
     zodiacKey: 'free',
     holidayApi: 'https://timor.tech/api/holiday/year',
     showTrayTime: true,
+    // 第二状态栏（菜单2）：第二时区时间，仅时间无天气，默认关闭，默认美国东部（纽约）时区
+    showTray2: false,
+    tray2TimeZone: 'America/New_York',
+    tray2Format: 'HH:mm:ss',
+    // 是否跟随系统时区；关闭后使用 customTimeZone，未选择时中文默认上海、英文默认纽约
+    followSystemTimeZone: true,
+    customTimeZone: '',
     trayDisplayFormat: 'M月D日 ddd HH:mm:ss - {city} {temp}°C {weather}'
 };
 

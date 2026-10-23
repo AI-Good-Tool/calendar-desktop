@@ -8,24 +8,24 @@
             <div class="create-btn-wrapper">
                 <a-button type="text" class="create-schedule-btn" @click="showScheduleModal">
                     <plus-circle-filled style="color: #597ef7; font-size: 16px; margin-right: 8px" />
-                    创建日程
+                    {{ t('rightPanel.createSchedule') }}
                 </a-button>
             </div>
         </div>
 
         <!-- Lunar Detail Card -->
         <div v-if="subscribedIds.includes('lunar')" class="info-card lunar-card">
-            <div class="lunar-date-header">农历 {{ lunarString }}</div>
+            <div class="lunar-date-header">{{ t('rightPanel.lunar.header', { date: lunarString }) }}</div>
             <div class="lunar-detail">
                 {{ lunarYearInfo }}
             </div>
             <div class="yi-ji-container">
                 <div class="yi-row">
-                    <span class="yi-label">宜</span>
+                    <span class="yi-label">{{ t('rightPanel.lunar.yi') }}</span>
                     <span class="yi-content">{{ yi }}</span>
                 </div>
                 <div class="ji-row">
-                    <span class="ji-label">忌</span>
+                    <span class="ji-label">{{ t('rightPanel.lunar.ji') }}</span>
                     <span class="ji-content">{{ ji }}</span>
                 </div>
             </div>
@@ -36,18 +36,18 @@
             <div class="schedule-header">
                 <div class="header-left">
                     <calendar-two-tone two-tone-color="#1890ff" />
-                    <span class="schedule-title">日程安排</span>
+                    <span class="schedule-title">{{ t('rightPanel.schedule.title') }}</span>
                 </div>
                 <a-button type="primary" size="small" shape="round" class="create-btn" @click="showScheduleModal">
                     <template #icon><plus-outlined /></template>
-                    新建
+                    {{ t('rightPanel.schedule.new') }}
                 </a-button>
             </div>
 
             <div v-if="todaySchedules.length === 0" class="empty-schedule-box">
                 <div class="empty-icon">📂</div>
-                <div class="empty-text">今日暂无日程安排</div>
-                <a-button type="link" size="small" @click="showScheduleModal">立即添加</a-button>
+                <div class="empty-text">{{ t('rightPanel.schedule.empty') }}</div>
+                <a-button type="link" size="small" @click="showScheduleModal">{{ t('rightPanel.schedule.addNow') }}</a-button>
             </div>
             <div v-else class="schedule-container">
                 <div v-for="item in todaySchedules" :key="item.id" class="schedule-card-item">
@@ -64,7 +64,7 @@
                                     </span>
                                     <span class="item-time">
                                         <clock-circle-outlined style="font-size: 12px; margin-right: 4px" />
-                                        {{ item.isAllDay ? '全天' : item.time }}
+                                        {{ item.isAllDay ? t('common.allDay') : item.time }}
                                     </span>
                                 </div>
                             </div>
@@ -102,25 +102,31 @@
                 @click="showForecastModal"
             >
                 <div class="card-header">
-                    <span class="card-title">天气预报 - {{ weatherData.city }}</span>
+                    <span class="card-title">{{
+                        t('rightPanel.weather.cardTitle', { city: weatherManager.getCityDisplayName(weatherData.city) })
+                    }}</span>
                     <div class="card-actions">
                         <reload-outlined
                             class="card-setting refresh-btn"
                             :class="{ spinning: weatherLoading }"
-                            title="刷新天气"
+                            :title="t('rightPanel.weather.refresh')"
                             @click.stop="fetchWeather(true)"
                         />
-                        <setting-outlined class="card-setting" title="天气设置" @click.stop="showWeatherSettings" />
+                        <setting-outlined
+                            class="card-setting"
+                            :title="t('rightPanel.weather.settings')"
+                            @click.stop="showWeatherSettings"
+                        />
                     </div>
                 </div>
                 <div class="weather-main">
                     <div class="weather-icon">
                         <cloud-filled
-                            v-if="weatherData.weather.includes('云') || weatherData.weather.includes('阴')"
+                            v-if="weatherIconType(weatherData.weather) === 'cloud'"
                             style="font-size: 48px; color: #69c0ff"
                         />
                         <star-outlined
-                            v-else-if="weatherData.weather.includes('晴')"
+                            v-else-if="weatherIconType(weatherData.weather) === 'sun'"
                             style="font-size: 48px; color: #ffad14"
                         />
                         <span v-else style="font-size: 48px">🌧️</span>
@@ -131,66 +137,54 @@
                     </div>
                 </div>
                 <div class="weather-detail-text">
-                    {{ weatherData.temp_night }}°/{{ weatherData.temp_day }}°C | {{ weatherData.daywind }}风{{
-                        weatherData.daypower
-                    }}级
+                    {{ weatherData.temp_night }}°/{{ weatherData.temp_day }}°C<span v-if="weatherWindText">
+                        | {{ weatherWindText }}</span
+                    >
                 </div>
-                <div class="weather-more" @click="showForecastModal">点击查看未来预报 ›</div>
+                <div class="weather-more" @click="showForecastModal">{{ t('rightPanel.weather.viewForecast') }}</div>
             </div>
 
             <!-- World Clock Card -->
             <div v-if="subscribedIds.includes('worldClock')" class="info-card clock-card">
                 <div class="card-header">
-                    <span class="card-title">世界时钟</span>
+                    <span class="card-title">{{ t('rightPanel.clock.title') }}</span>
                 </div>
                 <div class="clocks-container">
-                    <div class="clock-item">
+                    <div v-for="clock in worldClocks" :key="clock.key" class="clock-item">
                         <div class="analog-clock">
-                            <div
-                                class="hand hour"
-                                :style="{ transform: `rotate(${(now.hour() % 12) * 30 + now.minute() * 0.5}deg)` }"
-                            ></div>
-                            <div class="hand min" :style="{ transform: `rotate(${now.minute() * 6}deg)` }"></div>
-                            <div class="hand sec" :style="{ transform: `rotate(${now.second() * 6}deg)` }"></div>
+                            <div class="hand hour" :style="{ transform: `rotate(${clock.hourDeg}deg)` }"></div>
+                            <div class="hand min" :style="{ transform: `rotate(${clock.minDeg}deg)` }"></div>
+                            <div class="hand sec" :style="{ transform: `rotate(${clock.secDeg}deg)` }"></div>
                         </div>
                         <div class="clock-info">
-                            <div class="c-date">{{ beijingDate }} {{ beijingTime }}</div>
-                            <div class="c-name">北京</div>
-                        </div>
-                    </div>
-                    <div class="clock-item">
-                        <div class="analog-clock">
-                            <div
-                                class="hand hour"
-                                :style="{
-                                    transform: `rotate(${(now.add(-13, 'hour').hour() % 12) * 30 + now.minute() * 0.5}deg)`
-                                }"
-                            ></div>
-                            <div class="hand min" :style="{ transform: `rotate(${now.minute() * 6}deg)` }"></div>
-                            <div class="hand sec" :style="{ transform: `rotate(${now.second() * 6}deg)` }"></div>
-                        </div>
-                        <div class="clock-info">
-                            <div class="c-date">{{ nyDate }} {{ nyTime }}</div>
-                            <div class="c-name">纽约 <span class="diff">-13小时</span></div>
+                            <div class="c-date">{{ clock.date }} {{ clock.time }}</div>
+                            <div class="c-name">
+                                {{ clock.name }} <span class="diff">{{ clock.hint }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Zodiac Card -->
-            <div v-if="subscribedIds.includes('zodiac')" class="info-card zodiac-card">
+            <div
+                v-if="subscribedIds.includes('zodiac')"
+                class="info-card zodiac-card"
+                :class="{ 'locale-en': currentLocale !== 'zh-CN' }"
+            >
                 <div class="card-header">
                     <div class="card-title-group">
-                        <span class="card-title">星座运势</span>
+                        <span class="card-title">{{ t('rightPanel.zodiac.title') }}</span>
                         <a-select
                             v-model:value="zodiacType"
                             size="small"
                             class="zodiac-type-selector"
                             @change="fetchZodiac"
                             :bordered="false"
+                            :dropdown-match-select-width="false"
                         >
-                            <a-select-option v-for="t in zodiacTypes" :key="t.value" :value="t.value">
-                                {{ t.name }}
+                            <a-select-option v-for="zt in zodiacTypes" :key="zt.value" :value="zt.value">
+                                {{ zt.name }}
                             </a-select-option>
                         </a-select>
                     </div>
@@ -200,6 +194,7 @@
                         class="zodiac-selector"
                         @change="fetchZodiac"
                         :bordered="false"
+                        :dropdown-match-select-width="false"
                     >
                         <a-select-option v-for="z in zodiacs" :key="z.value" :value="z.value">
                             {{ z.name }}
@@ -215,30 +210,30 @@
                         <div class="zodiac-date">{{ zodiacInfo.time }}</div>
                         <div class="zodiac-main">
                             <div class="zodiac-fortune-item">
-                                <span class="f-label">综合指数</span>
+                                <span class="f-label">{{ t('rightPanel.zodiac.index.all') }}</span>
                                 <a-rate :value="zodiacInfo.fortune.all" disabled class="small-rate" />
                             </div>
                             <div class="zodiac-fortune-item">
-                                <span class="f-label">爱情指数</span>
+                                <span class="f-label">{{ t('rightPanel.zodiac.index.love') }}</span>
                                 <a-rate :value="zodiacInfo.fortune.love" disabled class="small-rate" />
                             </div>
                             <div class="zodiac-fortune-item">
-                                <span class="f-label">工作指数</span>
+                                <span class="f-label">{{ t('rightPanel.zodiac.index.work') }}</span>
                                 <a-rate :value="zodiacInfo.fortune.work" disabled class="small-rate" />
                             </div>
                             <div class="zodiac-fortune-item">
-                                <span class="f-label">财运指数</span>
+                                <span class="f-label">{{ t('rightPanel.zodiac.index.money') }}</span>
                                 <a-rate :value="zodiacInfo.fortune.money" disabled class="small-rate" />
                             </div>
                             <div class="zodiac-fortune-item">
-                                <span class="f-label">健康指数</span>
+                                <span class="f-label">{{ t('rightPanel.zodiac.index.health') }}</span>
                                 <a-rate :value="zodiacInfo.fortune.health" disabled class="small-rate" />
                             </div>
                         </div>
                         <div class="zodiac-tag-row">
-                            <span class="z-tag">幸运色：{{ zodiacInfo.luckycolor }}</span>
-                            <span class="z-tag">幸运数：{{ zodiacInfo.luckynumber }}</span>
-                            <span class="z-tag">速配：{{ zodiacInfo.luckyconstellation }}</span>
+                            <span class="z-tag">{{ t('rightPanel.zodiac.luckyColor', { v: zodiacInfo.luckycolor }) }}</span>
+                            <span class="z-tag">{{ t('rightPanel.zodiac.luckyNumber', { v: zodiacInfo.luckynumber }) }}</span>
+                            <span class="z-tag">{{ t('rightPanel.zodiac.match', { v: zodiacInfo.luckyconstellation }) }}</span>
                         </div>
                         <div class="zodiac-desc">{{ zodiacInfo.fortunetext.all }}</div>
                     </template>
@@ -248,23 +243,23 @@
                         <div class="zodiac-date">{{ zodiacInfo.time }}</div>
                         <div class="zodiac-week-content">
                             <div class="week-item">
-                                <div class="week-label">综合运势</div>
+                                <div class="week-label">{{ t('rightPanel.zodiac.period.all') }}</div>
                                 <div class="week-text">{{ zodiacInfo.fortunetext.all }}</div>
                             </div>
                             <div class="week-item">
-                                <div class="week-label">💼 工作运</div>
+                                <div class="week-label">{{ t('rightPanel.zodiac.period.work') }}</div>
                                 <div class="week-text">{{ zodiacInfo.fortunetext.work }}</div>
                             </div>
                             <div class="week-item">
-                                <div class="week-label">💰 财运</div>
+                                <div class="week-label">{{ t('rightPanel.zodiac.period.money') }}</div>
                                 <div class="week-text">{{ zodiacInfo.fortunetext.money }}</div>
                             </div>
                             <div class="week-item">
-                                <div class="week-label">❤️ 爱情运</div>
+                                <div class="week-label">{{ t('rightPanel.zodiac.period.love') }}</div>
                                 <div class="week-text">{{ zodiacInfo.fortunetext.love }}</div>
                             </div>
                             <div class="week-item">
-                                <div class="week-label">🏥 健康运</div>
+                                <div class="week-label">{{ t('rightPanel.zodiac.period.health') }}</div>
                                 <div class="week-text">{{ zodiacInfo.fortunetext.health }}</div>
                             </div>
                         </div>
@@ -275,46 +270,46 @@
                         <div class="zodiac-date">{{ zodiacInfo.time }}</div>
                         <div class="zodiac-month-content">
                             <div class="month-item">
-                                <div class="month-label">综合运势</div>
+                                <div class="month-label">{{ t('rightPanel.zodiac.period.all') }}</div>
                                 <div class="month-text">{{ zodiacInfo.fortunetext.all }}</div>
                             </div>
                             <div class="month-item">
-                                <div class="month-label">💼 工作运</div>
+                                <div class="month-label">{{ t('rightPanel.zodiac.period.work') }}</div>
                                 <div class="month-text">{{ zodiacInfo.fortunetext.work }}</div>
                             </div>
                             <div class="month-item">
-                                <div class="month-label">💰 财运</div>
+                                <div class="month-label">{{ t('rightPanel.zodiac.period.money') }}</div>
                                 <div class="month-text">{{ zodiacInfo.fortunetext.money }}</div>
                             </div>
                             <div class="month-item">
-                                <div class="month-label">❤️ 爱情运</div>
+                                <div class="month-label">{{ t('rightPanel.zodiac.period.love') }}</div>
                                 <div class="month-text">{{ zodiacInfo.fortunetext.love }}</div>
                             </div>
                             <div class="month-item">
-                                <div class="month-label">🏥 健康运</div>
+                                <div class="month-label">{{ t('rightPanel.zodiac.period.health') }}</div>
                                 <div class="month-text">{{ zodiacInfo.fortunetext.health }}</div>
                             </div>
                         </div>
                     </template>
                 </div>
                 <div v-else class="zodiac-empty">
-                    获取数据失败，请重试
-                    <a-button type="link" size="small" @click="fetchZodiac">刷新</a-button>
+                    {{ t('rightPanel.zodiac.failed') }}
+                    <a-button type="link" size="small" @click="fetchZodiac">{{ t('common.refresh') }}</a-button>
                 </div>
             </div>
 
             <!-- Huangli Card -->
             <div v-if="subscribedIds.includes('huangli')" class="info-card huangli-card">
                 <div class="card-header">
-                    <span class="card-title">黄历运势</span>
+                    <span class="card-title">{{ t('rightPanel.huangli.title') }}</span>
                 </div>
                 <div class="huangli-content">
                     <div class="h-item h-yi">
-                        <div class="h-label">宜</div>
+                        <div class="h-label">{{ t('rightPanel.lunar.yi') }}</div>
                         <div class="h-list">{{ yi }}</div>
                     </div>
                     <div class="h-item h-ji">
-                        <div class="h-label">忌</div>
+                        <div class="h-label">{{ t('rightPanel.lunar.ji') }}</div>
                         <div class="h-list">{{ ji }}</div>
                     </div>
                 </div>
@@ -322,33 +317,31 @@
 
             <!-- Edit Subscriptions Button -->
             <div class="edit-subscription-btn-container">
-                <a-button shape="round" @click="$emit('edit-subscription')">编辑订阅</a-button>
+                <a-button shape="round" @click="$emit('edit-subscription')">{{ t('rightPanel.editSubscription') }}</a-button>
             </div>
         </div>
 
         <!-- Weather City Settings Modal -->
         <a-modal
             v-model:open="weatherSettingsVisible"
-            title="天气设置"
+            :title="t('rightPanel.weather.settings')"
             width="400px"
             @ok="handleWeatherSettingsOk"
-            ok-text="确定"
-            cancel-text="取消"
+            :ok-text="t('common.ok')"
+            :cancel-text="t('common.cancel')"
         >
             <div style="padding: 20px 0">
-                <div style="margin-bottom: 12px; font-weight: 500">选择城市：</div>
+                <div style="margin-bottom: 12px; font-weight: 500">{{ t('rightPanel.weather.selectCity') }}</div>
                 <a-select
                     v-model:value="weatherCityName"
                     style="width: 100%"
                     show-search
-                    placeholder="选择一个城市"
-                >
-                    <a-select-option v-for="city in majorCities" :key="city" :value="city">
-                        {{ city }}
-                    </a-select-option>
-                </a-select>
+                    option-filter-prop="label"
+                    :options="cityOptions"
+                    :placeholder="t('rightPanel.weather.cityPlaceholder')"
+                />
                 <div style="margin-top: 12px; font-size: 12px; color: #8c8c8c">
-                    提示：目前支持全国主要城市，选择后点击确定刷新天气数据。
+                    {{ t('rightPanel.weather.cityTip') }}
                 </div>
             </div>
         </a-modal>
@@ -356,32 +349,34 @@
         <!-- 未来天气预报弹窗 -->
         <a-modal
             v-model:open="forecastModalVisible"
-            :title="`未来天气预报 - ${weatherCityName}`"
+            :title="t('rightPanel.weather.forecastTitle', { city: weatherManager.getCityDisplayName(weatherCityName) })"
             width="680px"
             :footer="null"
         >
             <div class="forecast-modal-body">
                 <div class="forecast-modal-toolbar">
                     <div class="forecast-range-switch">
-                        <span :class="{ active: forecastDays === 7 }" @click="forecastDays = 7">7天</span>
+                        <span :class="{ active: forecastDays === 7 }" @click="forecastDays = 7">{{
+                            t('rightPanel.weather.days', { n: 7 })
+                        }}</span>
                         <span
                             v-if="supportedForecastDays >= 14"
                             :class="{ active: forecastDays === 14 }"
                             @click="forecastDays = 14"
-                        >14天</span>
+                        >{{ t('rightPanel.weather.days', { n: 14 }) }}</span>
                     </div>
                     <a-button type="text" size="small" :loading="weatherLoading" @click="fetchWeather(true)">
                         <template #icon><reload-outlined /></template>
-                        刷新
+                        {{ t('common.refresh') }}
                     </a-button>
                 </div>
                 <div v-if="displayForecasts.length === 0" class="forecast-empty">
-                    暂无预报数据，请点击右上角刷新
+                    {{ t('rightPanel.weather.noForecast') }}
                 </div>
                 <div v-else class="forecast-grid" :class="{ 'grid-14': forecastDays === 14 }">
                     <div v-for="fc in displayForecasts" :key="fc.date" class="forecast-cell">
                         <div class="f-week">{{ formatForecastWeek(fc.date) }}</div>
-                        <div class="f-day">{{ dayjs(fc.date).format('MM-DD') }}</div>
+                        <div class="f-day">{{ dayjs(fc.date).format(t('common.fmt.monthDay')) }}</div>
                         <div class="f-weather">{{ fc.dayweather }}</div>
                         <div class="f-temp">{{ fc.nighttemp }}° / {{ fc.daytemp }}°</div>
                         <div v-if="fc.daywind" class="f-wind">{{ fc.daywind }} {{ fc.daypower }}</div>
@@ -393,42 +388,42 @@
         <!-- 公农历转换弹窗 -->
         <a-modal
             v-model:open="calendarConverterVisible"
-            title="公农历转换"
+            :title="t('rightPanel.converter.title')"
             width="500px"
-            ok-text="确定"
-            cancel-text="取消"
+            :ok-text="t('common.ok')"
+            :cancel-text="t('common.cancel')"
             @ok="calendarConverterVisible = false"
         >
             <div style="padding: 20px 0">
                 <a-space direction="vertical" style="width: 100%" :size="16">
                     <div>
-                        <div style="margin-bottom: 8px; font-weight: 500">选择公历日期：</div>
+                        <div style="margin-bottom: 8px; font-weight: 500">{{ t('rightPanel.converter.pickDate') }}</div>
                         <a-date-picker v-model:value="converterDate" style="width: 100%" />
                     </div>
                     <a-divider />
                     <div v-if="converterDate">
                         <div style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1890ff">
-                            转换结果
+                            {{ t('rightPanel.label.result') }}
                         </div>
                         <div class="converter-result">
                             <div class="result-item">
-                                <span class="label">公历：</span>
-                                <span class="value">{{ converterDate.format('YYYY年MM月DD日') }}</span>
+                                <span class="label">{{ t('rightPanel.label.solar') }}</span>
+                                <span class="value">{{ converterDate.format(t('common.fmt.fullDate')) }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">农历：</span>
+                                <span class="label">{{ t('rightPanel.label.lunar') }}</span>
                                 <span class="value">{{ getLunarDate(converterDate) }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">干支：</span>
+                                <span class="label">{{ t('rightPanel.label.ganZhi') }}</span>
                                 <span class="value">{{ getLunarGanZhi(converterDate) }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">生肖：</span>
-                                <span class="value">{{ getLunarZodiac(converterDate) }}年</span>
+                                <span class="label">{{ t('rightPanel.label.animal') }}</span>
+                                <span class="value">{{ t('rightPanel.lunar.animalYear', { animal: getLunarZodiac(converterDate) }) }}</span>
                             </div>
                             <div class="result-item" v-if="getLunarFestival(converterDate)">
-                                <span class="label">节日：</span>
+                                <span class="label">{{ t('rightPanel.label.festival') }}</span>
                                 <span class="value" style="color: #ff4d4f">{{ getLunarFestival(converterDate) }}</span>
                             </div>
                         </div>
@@ -440,15 +435,15 @@
         <!-- 节日大全弹窗 -->
         <a-modal
             v-model:open="holidayListVisible"
-            title="2026年节日大全"
+            :title="t('rightPanel.holidays.title', { year: 2026 })"
             width="600px"
-            ok-text="确定"
-            cancel-text="取消"
+            :ok-text="t('common.ok')"
+            :cancel-text="t('common.cancel')"
             @ok="holidayListVisible = false"
         >
             <div style="max-height: 500px; overflow-y: auto">
                 <a-tabs v-model:active-key="holidayTab">
-                    <a-tab-pane key="legal" tab="法定节假日">
+                    <a-tab-pane key="legal" :tab="t('rightPanel.holidays.legal')">
                         <a-list :data-source="legalHolidays" size="small">
                             <template #renderItem="{ item }">
                                 <a-list-item>
@@ -459,7 +454,7 @@
                                         <template #description>
                                             {{ item.date }}
                                             <span v-if="item.days" style="margin-left: 8px; color: #52c41a">
-                                                (放假{{ item.days }}天)
+                                                {{ t('rightPanel.holidays.daysOff', { n: item.days }, item.days) }}
                                             </span>
                                         </template>
                                     </a-list-item-meta>
@@ -467,7 +462,7 @@
                             </template>
                         </a-list>
                     </a-tab-pane>
-                    <a-tab-pane key="traditional" tab="传统节日">
+                    <a-tab-pane key="traditional" :tab="t('rightPanel.holidays.traditional')">
                         <a-list :data-source="traditionalHolidays" size="small">
                             <template #renderItem="{ item }">
                                 <a-list-item>
@@ -479,7 +474,7 @@
                             </template>
                         </a-list>
                     </a-tab-pane>
-                    <a-tab-pane key="solar" tab="24节气">
+                    <a-tab-pane key="solar" :tab="t('rightPanel.holidays.solarTerms')">
                         <a-list :data-source="solarTerms" :grid="{ gutter: 16, column: 2 }" size="small">
                             <template #renderItem="{ item }">
                                 <a-card size="small">
@@ -498,47 +493,51 @@
         <!-- 日期计算弹窗 -->
         <a-modal
             v-model:open="dateCalculatorVisible"
-            title="日期计算器"
+            :title="t('rightPanel.calculator.title')"
             width="500px"
-            ok-text="确定"
-            cancel-text="取消"
+            :ok-text="t('common.ok')"
+            :cancel-text="t('common.cancel')"
             @ok="dateCalculatorVisible = false"
         >
             <div style="padding: 20px 0">
                 <a-space direction="vertical" style="width: 100%" :size="16">
                     <div>
-                        <div style="margin-bottom: 8px; font-weight: 500">开始日期：</div>
+                        <div style="margin-bottom: 8px; font-weight: 500">{{ t('rightPanel.calculator.start') }}</div>
                         <a-date-picker v-model:value="calcStartDate" style="width: 100%" />
                     </div>
                     <div>
-                        <div style="margin-bottom: 8px; font-weight: 500">结束日期：</div>
+                        <div style="margin-bottom: 8px; font-weight: 500">{{ t('rightPanel.calculator.end') }}</div>
                         <a-date-picker v-model:value="calcEndDate" style="width: 100%" />
                     </div>
                     <a-divider />
                     <div v-if="calcStartDate && calcEndDate">
                         <div style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1890ff">
-                            计算结果
+                            {{ t('rightPanel.calculator.result') }}
                         </div>
                         <div class="converter-result">
                             <div class="result-item">
-                                <span class="label">相差天数：</span>
+                                <span class="label">{{ t('rightPanel.calculator.days') }}</span>
                                 <span class="value" style="color: #52c41a; font-size: 20px; font-weight: 600">
-                                    {{ Math.abs(calcEndDate.diff(calcStartDate, 'day')) }} 天
+                                    {{ tUnit('day', Math.abs(calcEndDate.diff(calcStartDate, 'day'))) }}
                                 </span>
                             </div>
                             <div class="result-item">
-                                <span class="label">相差周数：</span>
-                                <span class="value"
-                                    >{{ Math.floor(Math.abs(calcEndDate.diff(calcStartDate, 'day')) / 7) }} 周</span
-                                >
+                                <span class="label">{{ t('rightPanel.calculator.weeks') }}</span>
+                                <span class="value">{{
+                                    tUnit('week', Math.floor(Math.abs(calcEndDate.diff(calcStartDate, 'day')) / 7))
+                                }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">相差月数：</span>
-                                <span class="value">{{ Math.abs(calcEndDate.diff(calcStartDate, 'month')) }} 个月</span>
+                                <span class="label">{{ t('rightPanel.calculator.months') }}</span>
+                                <span class="value">{{
+                                    tUnit('month', Math.abs(calcEndDate.diff(calcStartDate, 'month')))
+                                }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">相差年数：</span>
-                                <span class="value">{{ Math.abs(calcEndDate.diff(calcStartDate, 'year')) }} 年</span>
+                                <span class="label">{{ t('rightPanel.calculator.years') }}</span>
+                                <span class="value">{{
+                                    tUnit('year', Math.abs(calcEndDate.diff(calcStartDate, 'year')))
+                                }}</span>
                             </div>
                         </div>
                     </div>
@@ -549,35 +548,37 @@
         <!-- 倒数日弹窗 -->
         <a-modal
             v-model:open="countdownVisible"
-            title="倒数日"
+            :title="t('rightPanel.countdown.title')"
             width="500px"
-            ok-text="确定"
-            cancel-text="取消"
+            :ok-text="t('common.ok')"
+            :cancel-text="t('common.cancel')"
             @ok="countdownVisible = false"
         >
             <div style="padding: 20px 0">
                 <a-space direction="vertical" style="width: 100%" :size="16">
                     <div>
-                        <div style="margin-bottom: 8px; font-weight: 500">目标日期：</div>
+                        <div style="margin-bottom: 8px; font-weight: 500">{{ t('rightPanel.countdown.target') }}</div>
                         <a-date-picker v-model:value="countdownTargetDate" style="width: 100%" />
                     </div>
                     <div>
-                        <div style="margin-bottom: 8px; font-weight: 500">事件名称：</div>
-                        <a-input v-model:value="countdownEventName" placeholder="例如：我的生日" />
+                        <div style="margin-bottom: 8px; font-weight: 500">{{ t('rightPanel.countdown.eventName') }}</div>
+                        <a-input v-model:value="countdownEventName" :placeholder="t('rightPanel.countdown.placeholder')" />
                     </div>
                     <a-divider />
                     <div v-if="countdownTargetDate">
-                        <div style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1890ff">倒计时</div>
+                        <div style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1890ff">
+                            {{ t('rightPanel.countdown.heading') }}
+                        </div>
                         <div class="converter-result">
                             <div style="text-align: center; padding: 20px 0">
                                 <div style="font-size: 14px; color: #666; margin-bottom: 8px">
-                                    {{ countdownEventName || '目标日期' }}
+                                    {{ countdownEventName || t('rightPanel.countdown.defaultName') }}
                                 </div>
                                 <div style="font-size: 48px; font-weight: 700; color: #1890ff; margin-bottom: 8px">
                                     {{ getCountdownDays(countdownTargetDate) }}
                                 </div>
                                 <div style="font-size: 16px; color: #666">
-                                    {{ getCountdownDays(countdownTargetDate) >= 0 ? '天后到达' : '天前已过' }}
+                                    {{ getCountdownSuffix(getCountdownDays(countdownTargetDate)) }}
                                 </div>
                             </div>
                         </div>
@@ -589,48 +590,46 @@
         <!-- 万年历弹窗 -->
         <a-modal
             v-model:open="perpetualCalendarVisible"
-            title="万年历查询"
+            :title="t('rightPanel.perpetual.title')"
             width="600px"
-            ok-text="确定"
-            cancel-text="取消"
+            :ok-text="t('common.ok')"
+            :cancel-text="t('common.cancel')"
             @ok="perpetualCalendarVisible = false"
         >
             <div style="padding: 20px 0">
                 <a-space direction="vertical" style="width: 100%" :size="16">
                     <div>
-                        <div style="margin-bottom: 8px; font-weight: 500">选择日期：</div>
+                        <div style="margin-bottom: 8px; font-weight: 500">{{ t('rightPanel.label.date') }}</div>
                         <a-date-picker v-model:value="perpetualDate" style="width: 100%" />
                     </div>
                     <a-divider />
                     <div v-if="perpetualDate">
                         <div style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1890ff">
-                            日期详情
+                            {{ t('rightPanel.perpetual.details') }}
                         </div>
                         <div class="converter-result">
                             <div class="result-item">
-                                <span class="label">公历：</span>
-                                <span class="value"
-                                    >{{ perpetualDate.format('YYYY年MM月DD日') }} {{ getWeekDay(perpetualDate) }}</span
-                                >
+                                <span class="label">{{ t('rightPanel.label.solar') }}</span>
+                                <span class="value">{{ perpetualDate.format(t('common.fmt.fullDateWeek')) }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">农历：</span>
+                                <span class="label">{{ t('rightPanel.label.lunar') }}</span>
                                 <span class="value">{{ getLunarDate(perpetualDate) }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">干支：</span>
+                                <span class="label">{{ t('rightPanel.label.ganZhi') }}</span>
                                 <span class="value">{{ getLunarGanZhi(perpetualDate) }}</span>
                             </div>
                             <div class="result-item">
-                                <span class="label">生肖：</span>
-                                <span class="value">{{ getLunarZodiac(perpetualDate) }}年</span>
+                                <span class="label">{{ t('rightPanel.label.animal') }}</span>
+                                <span class="value">{{ t('rightPanel.lunar.animalYear', { animal: getLunarZodiac(perpetualDate) }) }}</span>
                             </div>
                             <div class="result-item" v-if="getLunarFestival(perpetualDate)">
-                                <span class="label">节日：</span>
+                                <span class="label">{{ t('rightPanel.label.festival') }}</span>
                                 <span class="value" style="color: #ff4d4f">{{ getLunarFestival(perpetualDate) }}</span>
                             </div>
                             <div class="result-item" v-if="getPerpetualTerm(perpetualDate)">
-                                <span class="label">节气：</span>
+                                <span class="label">{{ t('rightPanel.label.term') }}</span>
                                 <span class="value" style="color: #52c41a">{{ getPerpetualTerm(perpetualDate) }}</span>
                             </div>
                         </div>
@@ -642,22 +641,22 @@
         <!-- 吉日查询弹窗 -->
         <a-modal
             v-model:open="luckyDayVisible"
-            title="黄道吉日查询"
+            :title="t('rightPanel.lucky.title')"
             width="600px"
-            ok-text="确定"
-            cancel-text="取消"
+            :ok-text="t('common.ok')"
+            :cancel-text="t('common.cancel')"
             @ok="luckyDayVisible = false"
         >
             <div style="padding: 20px 0">
                 <a-space direction="vertical" style="width: 100%" :size="16">
                     <div>
-                        <div style="margin-bottom: 8px; font-weight: 500">选择日期：</div>
+                        <div style="margin-bottom: 8px; font-weight: 500">{{ t('rightPanel.label.date') }}</div>
                         <a-date-picker v-model:value="luckyDate" style="width: 100%" />
                     </div>
                     <a-divider />
                     <div v-if="luckyDate">
                         <div style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1890ff">
-                            宜忌事项
+                            {{ t('rightPanel.lucky.heading') }}
                         </div>
                         <div class="converter-result">
                             <div style="margin-bottom: 16px">
@@ -679,7 +678,7 @@
                                             margin-right: 8px;
                                         "
                                     ></span>
-                                    宜
+                                    {{ t('rightPanel.lunar.yi') }}
                                 </div>
                                 <div style="color: #333; line-height: 1.8; padding-left: 12px">
                                     {{ getLuckyYi(luckyDate) }}
@@ -704,7 +703,7 @@
                                             margin-right: 8px;
                                         "
                                     ></span>
-                                    忌
+                                    {{ t('rightPanel.lunar.ji') }}
                                 </div>
                                 <div style="color: #333; line-height: 1.8; padding-left: 12px">
                                     {{ getLuckyJi(luckyDate) }}
@@ -731,7 +730,10 @@ import { computed, ref, watch, onMounted, onUnmounted, createVNode } from 'vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import dayOfYear from 'dayjs/plugin/dayOfYear';
-import { Lunar, Solar } from 'lunar-javascript';
+import { Lunar, Solar, I18n as LunarI18n } from 'lunar-javascript';
+import { useI18n } from 'vue-i18n';
+import { tList, tUnit, isZh, currentLocale, lunarMonthDayText, translateHolidayName } from '../i18n';
+import { appTimeZone, nowIn, zoneOffsetMinutes, zoneDiffHours, zoneCityName } from '../utils/timezone';
 import {
     PlusCircleFilled,
     PlusOutlined,
@@ -758,6 +760,8 @@ import scheduleManager from '../utils/scheduleManager';
 
 dayjs.extend(weekOfYear);
 dayjs.extend(dayOfYear);
+
+const { t } = useI18n();
 
 const props = defineProps(['selectedDate']);
 const emit = defineEmits(['refresh-calendar']); // 添加事件以刷新日历
@@ -789,28 +793,12 @@ const zodiacType = ref(localStorage.getItem('zodiac_type') || 'today');
 // 聚合数据API Key
 // JUHE_ZODIAC_KEY 已经移至 settingsManager
 
-const zodiacs = [
-    { name: '白羊座', value: '白羊座' },
-    { name: '金牛座', value: '金牛座' },
-    { name: '双子座', value: '双子座' },
-    { name: '巨蟹座', value: '巨蟹座' },
-    { name: '狮子座', value: '狮子座' },
-    { name: '处女座', value: '处女座' },
-    { name: '天秤座', value: '天秤座' },
-    { name: '天蝎座', value: '天蝎座' },
-    { name: '射手座', value: '射手座' },
-    { name: '摩羯座', value: '摩羯座' },
-    { name: '水瓶座', value: '水瓶座' },
-    { name: '双鱼座', value: '双鱼座' }
-];
+const zodiacTypes = computed(() =>
+    // 'tomorrow' 暂不开放
+    ['today', 'week', 'month'].map((value) => ({ name: t(`rightPanel.zodiac.types.${value}`), value }))
+);
 
-const zodiacTypes = [
-    { name: '今日', value: 'today' },
-    // { name: '明日', value: 'tomorrow' },
-    { name: '本周', value: 'week' },
-    { name: '本月', value: 'month' }
-];
-
+// 星座中文名作为存储值和接口映射 key，显示名随语言
 const zodiacMap = {
     白羊座: 'aries',
     金牛座: 'taurus',
@@ -825,6 +813,10 @@ const zodiacMap = {
     水瓶座: 'aquarius',
     双鱼座: 'pisces'
 };
+
+const zodiacs = computed(() =>
+    Object.entries(zodiacMap).map(([value, key]) => ({ name: t(`rightPanel.zodiac.signs.${key}`), value }))
+);
 
 async function fetchZodiac() {
     if (!subscriptionManager.isSubscribed('zodiac')) return;
@@ -895,12 +887,28 @@ const displayForecasts = computed(() =>
     weatherForecasts.value.slice(1, Math.min(forecastDays.value, supportedForecastDays.value) + 1)
 );
 
-const WEEK_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 function formatForecastWeek(dateStr) {
     const d = dayjs(dateStr);
-    if (d.isSame(dayjs().add(1, 'day'), 'day')) return '明天';
-    return WEEK_NAMES[d.day()];
+    if (d.isSame(dayjs().add(1, 'day'), 'day')) return t('common.tomorrow');
+    return tList('common.weekdaysBySunday')[d.day()];
 }
+
+// 天气描述可能是中文或英文（取决于数据源与翻译），两种关键词都匹配
+const CLOUD_KEYWORDS = ['云', '阴', 'cloud', 'overcast'];
+const SUN_KEYWORDS = ['晴', 'clear', 'sunny'];
+function weatherIconType(text) {
+    const s = String(text || '').toLowerCase();
+    if (CLOUD_KEYWORDS.some((k) => s.includes(k))) return 'cloud';
+    if (SUN_KEYWORDS.some((k) => s.includes(k))) return 'sun';
+    return 'other';
+}
+
+// 风向、风力均为 weatherManager 输出的完整文本（如"东北风"、"3级"），这里只做拼接
+const weatherWindText = computed(() => {
+    const w = weatherData.value;
+    if (!w) return '';
+    return [w.daywind, w.daypower].filter(Boolean).join(' ');
+});
 const weatherSettingsVisible = ref(false);
 
 const weatherCityName = ref(localStorage.getItem('weather_city_name') || '北京');
@@ -912,6 +920,10 @@ const majorCities = [
     '宁波', '厦门', '昆明', '合肥', '南昌', '贵阳', '兰州', '太原', '石家庄', '长春',
     '乌鲁木齐', '呼和浩特', '海口', '三亚', '拉萨', '西宁', '银川', '南宁', '珠海', '佛山'
 ];
+
+const cityOptions = computed(() =>
+    majorCities.map((city) => ({ value: city, label: weatherManager.getCityDisplayName(city) }))
+);
 
 function showWeatherSettings() {
     weatherSettingsVisible.value = true;
@@ -939,12 +951,36 @@ onUnmounted(() => {
     if (clockTimer) clearInterval(clockTimer);
 });
 
-// 计算北京和纽约时间
-const beijingTime = computed(() => now.value.format('HH:mm:ss'));
-const beijingDate = computed(() => now.value.format('M月D日'));
+// 第一个时钟为应用时区（跟随系统时即系统时区）；第二个默认北京，若与北京同偏移则改为纽约
+const SHANGHAI_TZ = 'Asia/Shanghai';
+const NEW_YORK_TZ = 'America/New_York';
 
-const nyTime = computed(() => now.value.add(-13, 'hour').format('HH:mm:ss'));
-const nyDate = computed(() => now.value.add(-13, 'hour').format('M月D日'));
+function formatHourDiff(hours) {
+    const sign = hours > 0 ? '+' : hours < 0 ? '-' : '±';
+    return t('rightPanel.clock.diff', { diff: `${sign}${Number(Math.abs(hours).toFixed(2))}` });
+}
+
+function buildClock(tz, localTz, isLocal) {
+    const time = nowIn(tz);
+    return {
+        key: isLocal ? 'local' : 'remote',
+        name: zoneCityName(tz),
+        hint: isLocal ? t('rightPanel.clock.local') : formatHourDiff(zoneDiffHours(localTz, tz)),
+        date: time.format(t('common.fmt.monthDay')),
+        time: time.format(t('common.fmt.timeSec')),
+        hourDeg: (time.hour() % 12) * 30 + time.minute() * 0.5,
+        minDeg: time.minute() * 6,
+        secDeg: time.second() * 6
+    };
+}
+
+const worldClocks = computed(() => {
+    // 依赖 now 以每秒刷新（夏令时切换也会随之更新）
+    void now.value;
+    const localTz = appTimeZone.value;
+    const remoteTz = zoneOffsetMinutes(localTz) !== zoneOffsetMinutes(SHANGHAI_TZ) ? SHANGHAI_TZ : NEW_YORK_TZ;
+    return [buildClock(localTz, localTz, true), buildClock(remoteTz, localTz, false)];
+});
 
 // 假期数据
 const holidayData = ref({});
@@ -976,21 +1012,21 @@ function editSchedule(schedule) {
 // 删除日程
 async function deleteSchedule(id) {
     Modal.confirm({
-        title: '确定要删除这个日程吗？',
+        title: t('rightPanel.schedule.deleteTitle'),
         icon: createVNode(ExclamationCircleOutlined, { style: 'color: #ff4d4f' }),
-        content: '删除后将无法恢复',
-        okText: '确定',
+        content: t('rightPanel.schedule.deleteContent'),
+        okText: t('common.ok'),
         okType: 'danger',
-        cancelText: '取消',
+        cancelText: t('common.cancel'),
         async onOk() {
             try {
                 await scheduleManager.deleteSchedule(id);
                 await loadTodaySchedules();
                 emit('refresh-calendar'); // 刷新日历标记
-                message.success('日程已删除');
+                message.success(t('rightPanel.schedule.deleted'));
             } catch (e) {
                 console.error('删除日程失败:', e);
-                message.error('删除失败');
+                message.error(t('rightPanel.schedule.deleteFailed'));
             }
         }
     });
@@ -1035,35 +1071,47 @@ const dateSummary = computed(() => {
 
     let relativeStr = '';
     if (diff === 0) {
-        relativeStr = '今天';
+        relativeStr = t('common.today');
+    } else if (diff === 1) {
+        relativeStr = t('common.tomorrow');
+    } else if (diff === -1) {
+        relativeStr = t('common.yesterday');
     } else if (diff > 0) {
-        relativeStr = `${diff}天后`;
+        relativeStr = t('rightPanel.rel.after', { n: diff }, diff);
     } else {
-        relativeStr = `${Math.abs(diff)}天前`;
+        relativeStr = t('rightPanel.rel.before', { n: -diff }, -diff);
     }
 
-    return `${d.year()}年第${d.week()}周 第${d.dayOfYear()}天 ${relativeStr}`;
+    return t('rightPanel.summary', { year: d.year(), week: d.week(), day: d.dayOfYear(), rel: relativeStr });
 });
+
+// 宜忌、节日等列表的分隔符
+function joinList(list, zhSep = ' ') {
+    return list.join(isZh() ? zhSep : ', ');
+}
 
 const lunarObj = computed(() => {
     return Lunar.fromDate(currentDateObj.value.toDate());
 });
 
-const lunarString = computed(() => {
-    return `${lunarObj.value.getMonthInChinese()}月${lunarObj.value.getDayInChinese()}`;
-});
+const lunarString = computed(() => lunarMonthDayText(lunarObj.value));
 
 const lunarYearInfo = computed(() => {
-    // e.g. 丙午 马年 ...
     const l = lunarObj.value;
-    return `${l.getYearInGanZhi()} ${l.getYearShengXiao()}年 ${l.getMonthInGanZhi()}月 ${l.getDayInGanZhi()}日 ${l.getTimeZhi()}时`;
+    return t('rightPanel.lunar.yearInfo', {
+        year: l.getYearInGanZhi(),
+        animal: l.getYearShengXiao(),
+        month: l.getMonthInGanZhi(),
+        day: l.getDayInGanZhi(),
+        time: l.getTimeZhi()
+    });
 });
 
-const yi = computed(() => lunarObj.value.getDayYi().join(' '));
-const ji = computed(() => lunarObj.value.getDayJi().join(' '));
+const yi = computed(() => joinList(lunarObj.value.getDayYi()));
+const ji = computed(() => joinList(lunarObj.value.getDayJi()));
 
-// 节日数据
-const legalHolidays = ref([
+// 节日数据（name 为假期接口同款中文名，显示时翻译）
+const LEGAL_HOLIDAYS = [
     { name: '元旦', date: '2026-01-01', days: 3 },
     { name: '春节', date: '2026-02-17~02-23', days: 7 },
     { name: '清明节', date: '2026-04-05~04-07', days: 3 },
@@ -1071,50 +1119,38 @@ const legalHolidays = ref([
     { name: '端午节', date: '2026-06-25~06-27', days: 3 },
     { name: '中秋节', date: '2026-10-06~10-08', days: 3 },
     { name: '国庆节', date: '2026-10-01~10-07', days: 7 }
-]);
+];
+const legalHolidays = computed(() =>
+    LEGAL_HOLIDAYS.map((h) => ({ ...h, name: translateHolidayName(h.name) }))
+);
 
-const traditionalHolidays = ref([
-    { name: '除夕', lunarDate: '农历腊月三十' },
-    { name: '春节', lunarDate: '农历正月初一' },
-    { name: '元宵节', lunarDate: '农历正月十五' },
-    { name: '龙抬头', lunarDate: '农历二月初二' },
-    { name: '清明节', lunarDate: '清明节气' },
-    { name: '端午节', lunarDate: '农历五月初五' },
-    { name: '七夕节', lunarDate: '农历七月初七' },
-    { name: '中元节', lunarDate: '农历七月十五' },
-    { name: '中秋节', lunarDate: '农历八月十五' },
-    { name: '重阳节', lunarDate: '农历九月初九' },
-    { name: '寒衣节', lunarDate: '农历十月初一' },
-    { name: '冬至节', lunarDate: '冬至节气' },
-    { name: '腊八节', lunarDate: '农历腊月初八' }
-]);
+const TRADITIONAL_HOLIDAY_KEYS = [
+    'chuXi', 'chunJie', 'yuanXiao', 'longTaiTou', 'qingMing', 'duanWu', 'qiXi',
+    'zhongYuan', 'zhongQiu', 'chongYang', 'hanYi', 'dongZhi', 'laBa'
+];
+const traditionalHolidays = computed(() =>
+    TRADITIONAL_HOLIDAY_KEYS.map((key) => ({
+        name: t(`rightPanel.holidays.items.${key}.name`),
+        lunarDate: t(`rightPanel.holidays.items.${key}.date`)
+    }))
+);
 
-const solarTerms = ref([
-    { name: '立春', date: '2月3-5日' },
-    { name: '雨水', date: '2月18-20日' },
-    { name: '惊蛰', date: '3月5-7日' },
-    { name: '春分', date: '3月20-22日' },
-    { name: '清明', date: '4月4-6日' },
-    { name: '谷雨', date: '4月19-21日' },
-    { name: '立夏', date: '5月5-7日' },
-    { name: '小满', date: '5月20-22日' },
-    { name: '芒种', date: '6月5-7日' },
-    { name: '夏至', date: '6月21-22日' },
-    { name: '小暑', date: '7月6-8日' },
-    { name: '大暑', date: '7月22-24日' },
-    { name: '立秋', date: '8月7-9日' },
-    { name: '处暑', date: '8月22-24日' },
-    { name: '白露', date: '9月7-9日' },
-    { name: '秋分', date: '9月22-24日' },
-    { name: '寒露', date: '10月8-9日' },
-    { name: '霜降', date: '10月23-24日' },
-    { name: '立冬', date: '11月7-8日' },
-    { name: '小雪', date: '11月22-23日' },
-    { name: '大雪', date: '12月6-8日' },
-    { name: '冬至', date: '12月21-23日' },
-    { name: '小寒', date: '1月5-7日' },
-    { name: '大寒', date: '1月20-21日' }
-]);
+// key 对应 lunar-javascript 的 jq.* 词条，名称随其语言切换
+const SOLAR_TERMS = [
+    ['liChun', 2, 3, 5], ['yuShui', 2, 18, 20], ['jingZhe', 3, 5, 7], ['chunFen', 3, 20, 22],
+    ['qingMing', 4, 4, 6], ['guYu', 4, 19, 21], ['liXia', 5, 5, 7], ['xiaoMan', 5, 20, 22],
+    ['mangZhong', 6, 5, 7], ['xiaZhi', 6, 21, 22], ['xiaoShu', 7, 6, 8], ['daShu', 7, 22, 24],
+    ['liQiu', 8, 7, 9], ['chuShu', 8, 22, 24], ['baiLu', 9, 7, 9], ['qiuFen', 9, 22, 24],
+    ['hanLu', 10, 8, 9], ['shuangJiang', 10, 23, 24], ['liDong', 11, 7, 8], ['xiaoXue', 11, 22, 23],
+    ['daXue', 12, 6, 8], ['dongZhi', 12, 21, 23], ['xiaoHan', 1, 5, 7], ['daHan', 1, 20, 21]
+];
+const solarTerms = computed(() => {
+    const months = tList('common.monthsShort');
+    return SOLAR_TERMS.map(([key, m, from, to]) => ({
+        name: LunarI18n.getMessage(`jq.${key}`),
+        date: t('rightPanel.holidays.termDate', { m, mon: months[m - 1], from, to })
+    }));
+});
 
 function showCalendarConverter() {
     calendarConverterVisible.value = true;
@@ -1139,12 +1175,16 @@ function showAllTools() {
 // 农历转换辅助函数
 function getLunarDate(date) {
     const lunar = Lunar.fromDate(date.toDate());
-    return `${lunar.getYearInChinese()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+    return t('rightPanel.lunar.fullDate', { year: lunar.getYearInChinese(), date: lunarMonthDayText(lunar) });
 }
 
 function getLunarGanZhi(date) {
     const lunar = Lunar.fromDate(date.toDate());
-    return `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日`;
+    return t('rightPanel.lunar.ganZhi', {
+        year: lunar.getYearInGanZhi(),
+        month: lunar.getMonthInGanZhi(),
+        day: lunar.getDayInGanZhi()
+    });
 }
 
 function getLunarZodiac(date) {
@@ -1155,7 +1195,7 @@ function getLunarZodiac(date) {
 function getLunarFestival(date) {
     const lunar = Lunar.fromDate(date.toDate());
     const festivals = lunar.getFestivals();
-    return festivals.length > 0 ? festivals.join('、') : null;
+    return festivals.length > 0 ? joinList(festivals, '、') : null;
 }
 
 // 获取天气数据（多天气源，按城市名查询）
@@ -1167,14 +1207,14 @@ async function fetchWeather(manual = false) {
         updateCurrentDayWeather();
         if (manual) {
             if (result) {
-                message.success('天气已更新');
+                message.success(t('rightPanel.weather.updated'));
             } else {
-                message.warning('天气刷新失败，请检查数据源配置');
+                message.warning(t('rightPanel.weather.refreshFailedCheck'));
             }
         }
     } catch (error) {
         console.error('Failed to fetch weather data:', error);
-        if (manual) message.error('天气刷新失败');
+        if (manual) message.error(t('rightPanel.weather.refreshFailed'));
     } finally {
         weatherLoading.value = false;
     }
@@ -1244,10 +1284,9 @@ function getCountdownDays(targetDate) {
     return target.diff(today, 'day');
 }
 
-// 获取星期
-function getWeekDay(date) {
-    const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-    return weekDays[date.day()];
+function getCountdownSuffix(days) {
+    const n = Math.abs(days);
+    return days >= 0 ? t('rightPanel.countdown.future', n) : t('rightPanel.countdown.past', n);
 }
 
 // 获取节气
@@ -1260,26 +1299,20 @@ function getPerpetualTerm(date) {
 function getLuckyYi(date) {
     const lunar = Lunar.fromDate(date.toDate());
     const yi = lunar.getDayYi();
-    return yi.length > 0 ? yi.join(' ') : '诸事不宜';
+    return yi.length > 0 ? joinList(yi) : t('rightPanel.lunar.noYi');
 }
 
 // 获取忌
 function getLuckyJi(date) {
     const lunar = Lunar.fromDate(date.toDate());
     const ji = lunar.getDayJi();
-    return ji.length > 0 ? ji.join(' ') : '百无禁忌';
+    return ji.length > 0 ? joinList(ji) : t('rightPanel.lunar.noJi');
 }
 
 // 获取日程类型名称
+const SCHEDULE_TYPES = ['todo', 'event', 'birthday', 'anniversary', 'countdown'];
 function getScheduleTypeName(type) {
-    const types = {
-        todo: '待办',
-        event: '日程',
-        birthday: '生日',
-        anniversary: '纪念日',
-        countdown: '倒数'
-    };
-    return types[type] || '其他';
+    return t(`rightPanel.scheduleType.${SCHEDULE_TYPES.includes(type) ? type : 'other'}`);
 }
 
 // 暴露方法给父组件
@@ -1287,7 +1320,8 @@ defineExpose({
     showAllTools,
     showCalendarConverter,
     showHolidayList,
-    showDateCalculator
+    showDateCalculator,
+    showScheduleModal
 });
 
 // 监听日期变化，更新天气和日程
@@ -1371,12 +1405,16 @@ watch(currentDateObj, () => {
     font-weight: bold;
     margin-right: 8px;
     min-width: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 .ji-label {
     color: #ff4d4f;
     font-weight: bold;
     margin-right: 8px;
     min-width: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 .yi-content,
 .ji-content {
@@ -1672,6 +1710,12 @@ watch(currentDateObj, () => {
     width: 70px;
     margin-right: 4px;
 }
+.zodiac-card.locale-en .zodiac-type-selector {
+    width: 76px;
+}
+.zodiac-card.locale-en .zodiac-selector {
+    width: 100px;
+}
 .zodiac-loading {
     padding: 20px;
     text-align: center;
@@ -1805,10 +1849,11 @@ watch(currentDateObj, () => {
     gap: 12px;
 }
 .h-label {
-    width: 24px;
     height: 24px;
     min-width: 24px;
-    border-radius: 50%;
+    padding: 0 5px;
+    border-radius: 12px;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;

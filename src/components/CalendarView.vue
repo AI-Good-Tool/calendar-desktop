@@ -41,11 +41,11 @@
                 </a-popover>
 
                 <a-dropdown trigger="click">
-                    <div class="nav-tag holiday-tag">假期安排</div>
+                    <div class="nav-tag holiday-tag">{{ t('calendar.holidaySchedule') }}</div>
                     <template #overlay>
                         <a-menu @click="handleHolidayJump">
                             <a-menu-item v-for="h in holidayList" :key="h.date">
-                                {{ h.name }}
+                                {{ translateHolidayName(h.name) }}
                             </a-menu-item>
                         </a-menu>
                     </template>
@@ -55,7 +55,7 @@
             <div class="center-controls"></div>
 
             <div class="right-controls">
-                <a-button type="text" class="today-btn" @click="goToday">今日</a-button>
+                <a-button type="text" class="today-btn" @click="goToday">{{ t('calendar.today') }}</a-button>
                 <div class="nav-arrows">
                     <a-button type="text" size="small" @click="prevMonth">
                         <template #icon><LeftOutlined /></template>
@@ -102,12 +102,16 @@
                 <div class="date-header">
                     <span class="solar-day">{{ date.day }}</span>
                 </div>
-                <span v-if="date.isHoliday" class="status-tag holiday-tag">休</span>
-                <span v-else-if="date.isWorkday" class="status-tag workday-tag">班</span>
-                <div class="lunar-day" :class="{ festival: date.festival }">
-                    {{ date.festival || date.lunarDayName }}
+                <span v-if="date.isHoliday" class="status-tag holiday-tag">{{ t('calendar.badgeOff') }}</span>
+                <span v-else-if="date.isWorkday" class="status-tag workday-tag">{{ t('calendar.badgeWork') }}</span>
+                <!-- 副标题只占一行：节日 > 节气 > 农历日，避免格子较矮时多行互相挤压重叠 -->
+                <div
+                    class="lunar-day"
+                    :class="{ festival: date.festival, 'solar-term': !date.festival && date.term }"
+                    :title="[date.festival, date.term, date.lunarDayName].filter(Boolean).join(' · ')"
+                >
+                    {{ date.festival || date.term || date.lunarDayName }}
                 </div>
-                <div v-if="date.term" class="solar-term">{{ date.term }}</div>
 
                 <!-- 日程标记小圆点 -->
                 <div v-if="date.scheduleCount > 0" class="schedule-indicator">
@@ -134,6 +138,10 @@ import {
 import scheduleManager from '../utils/scheduleManager';
 import settingsManager from '../utils/settingsManager';
 import { fetch } from '@tauri-apps/plugin-http';
+import { useI18n } from 'vue-i18n';
+import { tList, lunarDayText, translateHolidayName } from '../i18n';
+
+const { t } = useI18n();
 
 const props = defineProps(['modelValue']);
 const emit = defineEmits(['update:modelValue', 'select']);
@@ -147,7 +155,7 @@ const monthSchedules = ref([]);
 // 月份选择器状态
 const monthPickerVisible = ref(false);
 const pickerYear = ref(dayjs().year());
-const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+const monthNames = computed(() => tList('common.monthsShort'));
 
 function changeYear(step) {
     pickerYear.value += step;
@@ -183,7 +191,7 @@ function handleHolidayJump({ key }) {
     }
 }
 
-const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const weekDays = computed(() => tList('common.weekdaysShort'));
 
 const scheduleCounts = ref({});
 
@@ -213,7 +221,7 @@ defineExpose({
 
 // 动态显示当前年月
 const currentYearMonth = computed(() => {
-    return `${currentDate.value.year()}年${currentDate.value.month() + 1}月`;
+    return currentDate.value.format(t('common.fmt.yearMonth'));
 });
 
 // 获取假期数据
@@ -299,7 +307,7 @@ function createDateObject(dateObj, isCurrentMonth) {
     // 优先显示法定节假日，否则显示农历节日或节气
     let festival = null;
     if (holidayInfo && holidayInfo.name) {
-        festival = holidayInfo.name;
+        festival = translateHolidayName(holidayInfo.name);
     } else {
         const festivals = lunar.getFestivals();
         festival = festivals.length > 0 ? festivals[0] : null;
@@ -310,7 +318,7 @@ function createDateObject(dateObj, isCurrentMonth) {
         day: dateObj.date(),
         isCurrentMonth,
         isToday: dateObj.isSame(dayjs(), 'day'),
-        lunarDayName: lunar.getDayInChinese(),
+        lunarDayName: lunarDayText(lunar),
         term: lunar.getJieQi(),
         festival: festival,
         scheduleCount: scheduleCount,
@@ -488,9 +496,11 @@ function selectDate(date) {
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: repeat(6, 1fr);
+    /* minmax(0, 1fr)：严格等分，格子长宽不随单元格内容（多行节日文案等）变化 */
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
     flex: 1;
+    min-height: 0;
     border-top: 1px solid #f0f0f0;
     border-left: 1px solid #f0f0f0;
 }
@@ -499,12 +509,15 @@ function selectDate(date) {
     border-right: 1px solid #f0f0f0;
     border-bottom: 1px solid #f0f0f0;
     padding: 8px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background-color 0.2s, box-shadow 0.2s;
     position: relative;
 }
 
@@ -514,7 +527,8 @@ function selectDate(date) {
 
 .calendar-cell.selected {
     background-color: #e6f7ff;
-    border: 2px solid #1890ff; /* Ant Design Blue */
+    /* 用内阴影画高亮边框，不改变盒模型尺寸，避免选中时格子变形 */
+    box-shadow: inset 0 0 0 2px #1890ff;
     z-index: 1;
 }
 
@@ -538,9 +552,10 @@ function selectDate(date) {
     top: 4px;
     right: 4px;
     font-size: 10px;
-    padding: 2px 4px;
+    padding: 2px 3px;
     border-radius: 4px;
     line-height: 1.2;
+    white-space: nowrap;
     transform: scale(0.9);
     z-index: 5;
     pointer-events: none;
@@ -563,6 +578,12 @@ function selectDate(date) {
 .lunar-day {
     font-size: 12px;
     color: #888;
+    /* 长节日名单行省略，避免换行撑高格子 */
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
 }
 
 .festival {
@@ -570,9 +591,7 @@ function selectDate(date) {
 }
 
 .solar-term {
-    font-size: 12px;
     color: #1890ff;
-    margin-top: 2px;
 }
 
 .today .date-header {

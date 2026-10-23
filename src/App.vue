@@ -1,37 +1,37 @@
 <template>
-    <a-config-provider :locale="zhCN">
+    <a-config-provider :locale="antdLocale">
         <div class="app-layout">
             <!-- Header -->
             <header class="app-header" data-tauri-drag-region>
                 <div class="header-left">
                     <div class="window-controls">
-                        <span class="dot red" @click="closeWindow" title="关闭">
+                        <span class="dot red" @click="closeWindow" :title="t('app.window.close')">
                             <close-outlined class="dot-icon" />
                         </span>
-                        <span class="dot yellow" @click="minimizeWindow" title="最小化">
+                        <span class="dot yellow" @click="minimizeWindow" :title="t('app.window.minimize')">
                             <minus-outlined class="dot-icon" />
                         </span>
-                        <span class="dot green" @click="toggleMaximize" title="最大化/还原">
+                        <span class="dot green" @click="toggleMaximize" :title="t('app.window.maximize')">
                             <border-outlined class="dot-icon" />
                         </span>
                     </div>
                     <div class="logo">
                         <img src="/logo.png" alt="logo" class="logo-img" />
-                        <span class="logo-text">云小历</span>
+                        <span class="logo-text">{{ t('common.appName') }}</span>
                     </div>
                     <div class="nav-tabs">
                         <div class="nav-item" :class="{ active: activeTab === 'calendar' }" @click="goToCalendar">
-                            <check-square-outlined style="margin-right: 4px" /> 日历
+                            <check-square-outlined style="margin-right: 4px" /> {{ t('app.nav.calendar') }}
                         </div>
                         <div
                             class="nav-item"
                             :class="{ active: activeTab === 'subscription' }"
                             @click="goToSubscription"
                         >
-                            <star-outlined style="margin-right: 4px" /> 订阅
+                            <star-outlined style="margin-right: 4px" /> {{ t('app.nav.subscription') }}
                         </div>
                         <div class="nav-item" :class="{ active: activeTab === 'tools' }" @click="openTools">
-                            <tool-outlined style="margin-right: 4px" /> 工具
+                            <tool-outlined style="margin-right: 4px" /> {{ t('app.nav.tools') }}
                         </div>
                     </div>
                 </div>
@@ -41,14 +41,14 @@
                         <template #content>
                             <div class="notification-popover">
                                 <div class="notif-header">
-                                    <span>通知中心</span>
+                                    <span>{{ t('app.notif.center') }}</span>
                                     <a v-if="notifications.length > 0" @click="clearAllNotifs" style="font-size: 12px"
-                                        >清空</a
+                                        >{{ t('app.notif.clear') }}</a
                                     >
                                 </div>
                                 <div v-if="notifications.length === 0" class="notif-empty">
                                     <bell-outlined style="font-size: 24px; color: #bfbfbf; margin-bottom: 8px" />
-                                    <div>暂无新消息</div>
+                                    <div>{{ t('app.notif.empty') }}</div>
                                 </div>
                                 <div v-else class="notif-list">
                                     <div
@@ -108,31 +108,33 @@
             </main>
 
             <!-- 通知详情对话框 -->
-            <a-modal v-model:open="notifDetailVisible" title="日程详情" :footer="null" centered>
+            <a-modal v-model:open="notifDetailVisible" :title="t('app.detail.title')" :footer="null" centered>
                 <div v-if="selectedNotif" class="notif-detail-view">
                     <div class="detail-header">
                         <span class="detail-type-tag">{{
-                            selectedNotif.schedule ? getTypeName(selectedNotif.schedule.type) : '日程'
+                            selectedNotif.schedule ? getTypeName(selectedNotif.schedule.type) : t('app.types.event')
                         }}</span>
                         <h3 class="detail-title">{{ selectedNotif.fullTitle }}</h3>
                     </div>
                     <div class="detail-body">
                         <div class="detail-row">
                             <clock-circle-outlined />
-                            <span class="label">时间：</span>
+                            <span class="label">{{ t('app.detail.time') }}</span>
                             <span class="value"
                                 >{{ selectedNotif.schedule?.date }}
-                                {{ selectedNotif.schedule?.isAllDay ? '全天' : selectedNotif.schedule?.time }}</span
+                                {{
+                                    selectedNotif.schedule?.isAllDay ? t('common.allDay') : selectedNotif.schedule?.time
+                                }}</span
                             >
                         </div>
                         <div v-if="selectedNotif.location" class="detail-row">
                             <environment-outlined />
-                            <span class="label">地点：</span>
+                            <span class="label">{{ t('app.detail.location') }}</span>
                             <span class="value">{{ selectedNotif.location }}</span>
                         </div>
                         <div v-if="selectedNotif.note" class="detail-row note-row">
                             <file-text-outlined />
-                            <span class="label">备注：</span>
+                            <span class="label">{{ t('app.detail.note') }}</span>
                             <div class="value note-content">{{ selectedNotif.note }}</div>
                         </div>
                     </div>
@@ -145,8 +147,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import updater from './utils/updater';
 import dayjs from 'dayjs';
 import scheduleManager from './utils/scheduleManager';
 import settingsManager from './utils/settingsManager';
@@ -170,14 +175,13 @@ import {
 import { createVNode } from 'vue';
 import RightPanel from './components/RightPanel.vue';
 import weatherManager from './utils/weatherManager';
-import zhCN from 'ant-design-vue/es/locale/zh_CN';
-import 'dayjs/locale/zh-cn';
-
-// 设置 dayjs 语言
-dayjs.locale('zh-cn');
+import { antdLocale } from './i18n';
+import { onTimeZoneChange, appTimeZone, followSystemTimeZone, zoneCityName } from './utils/timezone';
+import { localizeTrayFormat, localizeTray2Format, DEFAULT_TRAY_FORMAT, DEFAULT_TRAY2_FORMAT } from './utils/trayFormats';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 // 计算当前激活的标签
 const activeTab = computed(() => {
@@ -256,7 +260,7 @@ async function checkSchedules() {
             // 如果是全天日程，且今天还没提醒过
             if (schedule.isAllDay) {
                 if (!notifiedIds.has(notifyKey)) {
-                    addNotification(schedule, '今日全天事项', now.format('HH:mm'));
+                    addNotification(schedule, t('app.notif.allDayTitle'), now.format('HH:mm'));
                     notifiedIds.add(notifyKey);
                 }
                 continue;
@@ -264,12 +268,12 @@ async function checkSchedules() {
 
             // 如果是普通日程，时间匹配且今天还没提醒过
             if (schedule.time === timeStr && !notifiedIds.has(notifyKey)) {
-                addNotification(schedule, '日程开始提醒', timeStr);
+                addNotification(schedule, t('app.notif.startTitle'), timeStr);
                 notifiedIds.add(notifyKey);
 
                 // 顶部弹窗轻提示
                 message.info({
-                    content: `行程提醒: ${schedule.title}`,
+                    content: t('app.notif.toast', { title: schedule.title }),
                     duration: 5
                 });
             }
@@ -284,7 +288,9 @@ function addNotification(schedule, title, time) {
         id: Date.now() + Math.random(),
         scheduleId: schedule.id,
         title: title,
-        content: `【${schedule.title}】${schedule.isAllDay ? '今天全天' : '现在开始了'}`,
+        content: t(schedule.isAllDay ? 'app.notif.allDayContent' : 'app.notif.startContent', {
+            title: schedule.title
+        }),
         time: time,
         read: false,
         fullTitle: schedule.title,
@@ -301,8 +307,8 @@ function handleNotifClick(notif) {
 }
 
 function getTypeName(type) {
-    const map = { todo: '待办', event: '日程', birthday: '生日', anniversary: '纪念日', countdown: '倒数' };
-    return map[type] || '日程';
+    const known = ['todo', 'event', 'birthday', 'anniversary', 'countdown'];
+    return t(`app.types.${known.includes(type) ? type : 'event'}`);
 }
 
 function clearAllNotifs() {
@@ -313,20 +319,42 @@ function clearAllNotifs() {
 let checkTimer = null;
 let trayTimer = null;
 let lastTrayTemplate = null;
+let lastTray2Key = null;
+
+// 第二状态栏（菜单2）：独立开关 + 时区 + 格式，只显示时间不含天气
+async function syncTray2() {
+    const show = !!settingsManager.get('showTray2');
+    const tz = settingsManager.get('tray2TimeZone') || 'America/New_York';
+    const format = localizeTray2Format(settingsManager.get('tray2Format') || DEFAULT_TRAY2_FORMAT);
+    // dayjs 时间 token 转 {TOKEN} 占位符，交给 Rust 端每秒渲染；城市前缀便于区分两个时钟
+    const body = format.replace(TRAY_TOKEN_REGEX, (t, literal) => (literal !== undefined ? literal : `{${t}}`));
+    const template = show ? `${zoneCityName(tz)} ${body}` : '';
+    const key = show ? `${tz}|${template}` : '';
+    if (key === lastTray2Key) return;
+    try {
+        await invoke('sync_tray2_config', { show, template, timeZone: show ? tz : null });
+        lastTray2Key = key;
+    } catch (e) {
+        // 忽略非 macOS 平台的错误
+    }
+}
 
 // dayjs 格式 token → 占位符（长 token 必须排在短 token 前面）
 // 真正的按秒计时在 Rust 原生后台线程执行：macOS 窗口隐藏后 WebView 会被系统挂起，
 // 前端 setInterval 会停止，导致状态栏时间/日期不走，因此这里只负责同步模板。
-const TRAY_TOKEN_REGEX = /YYYY|YY|dddd|ddd|MM|DD|HH|hh|mm|ss|M|D|H|h|m|s|A|a/g;
+// [..] 内为字面文本（城市/天气等），不做 token 替换且去掉括号
+const TRAY_TOKEN_REGEX = /\[([^\]]*)\]|YYYY|YY|MMMM|MMM|dddd|ddd|MM|DD|HH|hh|mm|ss|M|D|H|h|m|s|A|a/g;
 
 async function updateTrayTitle() {
+    // 菜单2 与主状态栏开关互相独立，先同步它
+    syncTray2();
     const showTray = settingsManager.get('showTrayTime');
-    const format = settingsManager.get('trayDisplayFormat') || 'M月D日 ddd HH:mm:ss';
+    const format = localizeTrayFormat(settingsManager.get('trayDisplayFormat') || DEFAULT_TRAY_FORMAT);
 
     if (!showTray) {
         if (lastTrayTemplate !== '') {
             try {
-                await invoke('sync_tray_config', { show: false, template: '' });
+                await invoke('sync_tray_config', { show: false, template: '', timeZone: null });
                 lastTrayTemplate = '';
             } catch (e) {
                 /* 忽略 */
@@ -336,7 +364,7 @@ async function updateTrayTitle() {
     }
 
     const weather = weatherManager.getToday();
-    const weatherCityName = localStorage.getItem('weather_city_name') || '北京';
+    const weatherCityName = weatherManager.getCityDisplayName(localStorage.getItem('weather_city_name') || '北京');
 
     let titleFormat = format;
     if (weather) {
@@ -355,13 +383,17 @@ async function updateTrayTitle() {
     }
 
     // 把 dayjs 时间 token 转成 {TOKEN} 占位符，交给 Rust 端每秒渲染
-    const template = titleFormat.replace(TRAY_TOKEN_REGEX, (t) => `{${t}}`);
+    const template = titleFormat.replace(TRAY_TOKEN_REGEX, (t, literal) => (literal !== undefined ? literal : `{${t}}`));
+
+    // 跟随系统时由 Rust 使用系统本地时区（可感知系统时区切换）；否则按应用时区渲染
+    const timeZone = followSystemTimeZone.value ? null : appTimeZone.value;
+    const syncKey = `${timeZone || ''}|${template}`;
 
     try {
-        // 只有模板变化（设置/天气更新）时才同步，时间走动由 Rust 端负责
-        if (template !== lastTrayTemplate) {
-            await invoke('sync_tray_config', { show: true, template });
-            lastTrayTemplate = template;
+        // 只有模板或时区变化（设置/天气更新）时才同步，时间走动由 Rust 端负责
+        if (syncKey !== lastTrayTemplate) {
+            await invoke('sync_tray_config', { show: true, template, timeZone });
+            lastTrayTemplate = syncKey;
         }
     } catch (e) {
         // 忽略非 macOS 平台的错误
@@ -375,8 +407,43 @@ async function refreshWeather() {
 }
 
 let weatherTimer = null;
+let offTimeZoneChange = null;
+let unlistenTrayAction = null;
 
-onMounted(() => {
+// macOS 状态栏右键菜单动作
+async function handleTrayAction(action) {
+    if (action === 'settings') {
+        router.push('/settings');
+    } else if (action === 'add-schedule') {
+        if (route.path !== '/') {
+            router.push('/');
+        }
+        // 等 RightPanel 挂载/可见后打开新建日程弹窗
+        setTimeout(() => {
+            if (sidePanelRef.value && sidePanelRef.value.showScheduleModal) {
+                sidePanelRef.value.showScheduleModal();
+            }
+        }, 100);
+    } else if (action === 'about') {
+        router.push({ path: '/settings', query: { tab: 'about' } });
+    }
+}
+
+onMounted(async () => {
+    // 自动检查仅获取元数据，下载和安装由用户点击触发。
+    updater.checkForUpdates().then((available) => {
+        if (available) message.info({ content: t('about.status.available', { version: updater.state.version }), duration: 8 });
+    });
+    // 状态栏右键菜单事件
+    unlistenTrayAction = await listen('tray-action', (e) => handleTrayAction(e.payload));
+
+    // 应用时区变化（系统时区切换，或设置里切换时区）：立即重新判断"今天"、刷新日历、提醒和状态栏
+    offTimeZoneChange = onTimeZoneChange(() => {
+        updateTrayTitle();
+        checkSchedules();
+        refreshCalendar();
+    });
+
     // 立即检查一次
     checkSchedules();
     // 每分钟检查一次 (30s 检查一次防止跳过分钟)
@@ -396,6 +463,8 @@ onUnmounted(() => {
     if (checkTimer) clearInterval(checkTimer);
     if (trayTimer) clearInterval(trayTimer);
     if (weatherTimer) clearInterval(weatherTimer);
+    if (offTimeZoneChange) offTimeZoneChange();
+    if (unlistenTrayAction) unlistenTrayAction();
 });
 
 function handleDateSelect(date) {
@@ -415,13 +484,26 @@ function openTools() {
 // 窗口控制函数
 const appWindow = getCurrentWindow();
 
+// 是否 macOS 平台
+const isMacOS = /Mac OS X|Macintosh/.test(navigator.userAgent);
+
 async function closeWindow() {
+    // macOS：红点 × 隐藏窗口到系统状态栏（Accessory 模式，Dock 中彻底隐藏），
+    // 点击状态栏图标或 Dock 图标（Reopen）即可恢复显示
+    if (isMacOS) {
+        try {
+            await invoke('hide_window_to_tray');
+        } catch (e) {
+            console.error('隐藏窗口失败:', e);
+        }
+        return;
+    }
     Modal.confirm({
-        title: '提示',
+        title: t('app.quit.title'),
         icon: createVNode(ExclamationCircleOutlined),
-        content: '确定要退出云小历吗？',
-        okText: '退出',
-        cancelText: '取消',
+        content: t('app.quit.content'),
+        okText: t('app.quit.ok'),
+        cancelText: t('common.cancel'),
         centered: true,
         onOk: async () => {
             try {
@@ -433,18 +515,10 @@ async function closeWindow() {
     });
 }
 
-// 是否 macOS 平台
-const isMacOS = /Mac OS X|Macintosh/.test(navigator.userAgent);
-
 async function minimizeWindow() {
+    // macOS：黄点 - 标准最小化，窗口缩到 Dock 右侧（废纸篓旁），点击即可恢复
     try {
-        if (isMacOS) {
-            // macOS：隐藏窗口到系统状态栏，同时切为 Accessory 模式（Dock 中彻底隐藏），
-            // 点击状态栏图标或 Dock 图标（Reopen）即可恢复显示
-            await invoke('hide_window_to_tray');
-        } else {
-            await appWindow.minimize();
-        }
+        await appWindow.minimize();
     } catch (e) {
         console.error('最小化窗口失败:', e);
     }
@@ -753,6 +827,8 @@ async function toggleMaximize() {
 
 .main-view-area {
     flex: 7;
+    /* flex 子项默认 min-width:auto，右侧面板内容一长就会把左侧挤窄，导致日历格子宽度随右侧内容变化 */
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -765,6 +841,8 @@ async function toggleMaximize() {
 
 .side-panel-area {
     flex: 3;
+    /* 严格按 7:3 分配宽度，内容不可撑开面板 */
+    min-width: 0;
     padding: 16px;
     padding-left: 0;
     display: flex;

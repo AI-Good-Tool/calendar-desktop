@@ -1,10 +1,10 @@
 <template>
     <a-modal
         v-model:open="visible"
-        :title="editingSchedule ? '修改日程' : '添加日程'"
+        :title="editingSchedule ? t('schedule.editTitle') : t('schedule.addTitle')"
         width="600px"
-        ok-text="确定"
-        cancel-text="取消"
+        :ok-text="t('common.ok')"
+        :cancel-text="t('common.cancel')"
         centered
         :confirm-loading="saving"
         @ok="handleSave"
@@ -13,28 +13,28 @@
         <div class="modal-scroll-content">
             <!-- 日历选择 -->
             <div style="margin-bottom: 16px">
-                <div style="margin-bottom: 8px; font-weight: 500">日历选择：</div>
+                <div style="margin-bottom: 8px; font-weight: 500">{{ t('schedule.calendarSelect') }}</div>
                 <a-select v-model:value="formData.calendar" style="width: 100%">
-                    <a-select-option value="my">我的日历</a-select-option>
+                    <a-select-option value="my">{{ t('schedule.myCalendar') }}</a-select-option>
                 </a-select>
-                <a-button type="link" style="padding: 0; margin-top: 4px">日历管理</a-button>
+                <a-button type="link" style="padding: 0; margin-top: 4px">{{ t('schedule.calendarManage') }}</a-button>
             </div>
 
             <!-- 类型Tab -->
             <a-tabs v-model:activeKey="formData.type" @change="handleTypeChange">
-                <a-tab-pane key="todo" tab="待办">
+                <a-tab-pane key="todo" :tab="t('schedule.types.todo')">
                     <TodoForm ref="todoFormRef" :form-data="formData" @update="updateFormData" />
                 </a-tab-pane>
-                <a-tab-pane key="event" tab="日程">
+                <a-tab-pane key="event" :tab="t('schedule.types.event')">
                     <EventForm ref="eventFormRef" :form-data="formData" @update="updateFormData" />
                 </a-tab-pane>
-                <a-tab-pane key="birthday" tab="生日">
+                <a-tab-pane key="birthday" :tab="t('schedule.types.birthday')">
                     <BirthdayForm ref="birthdayFormRef" :form-data="formData" @update="updateFormData" />
                 </a-tab-pane>
-                <a-tab-pane key="anniversary" tab="纪念日">
+                <a-tab-pane key="anniversary" :tab="t('schedule.types.anniversary')">
                     <AnniversaryForm ref="anniversaryFormRef" :form-data="formData" @update="updateFormData" />
                 </a-tab-pane>
-                <a-tab-pane key="countdown" tab="倒数日">
+                <a-tab-pane key="countdown" :tab="t('schedule.types.countdown')">
                     <CountdownForm ref="countdownFormRef" :form-data="formData" @update="updateFormData" />
                 </a-tab-pane>
             </a-tabs>
@@ -51,6 +51,9 @@ import BirthdayForm from './schedule-forms/BirthdayForm.vue';
 import AnniversaryForm from './schedule-forms/AnniversaryForm.vue';
 import CountdownForm from './schedule-forms/CountdownForm.vue';
 import scheduleManager from '../utils/scheduleManager';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
     modelValue: {
@@ -157,7 +160,7 @@ async function handleSave() {
         resetForm();
     } catch (e) {
         console.error('保存日程失败:', e);
-        alert('保存日程失败：' + (e.message || e));
+        alert(t('schedule.saveFailed', { msg: e.message || e }));
     } finally {
         saving.value = false;
     }
@@ -189,6 +192,8 @@ function resetForm() {
     formData.location = '';
     formData.note = '';
     formData.repeat = 'none';
+    // 清空后由 EventForm 回填为当前系统时区
+    formData.timezone = '';
 }
 </script>
 

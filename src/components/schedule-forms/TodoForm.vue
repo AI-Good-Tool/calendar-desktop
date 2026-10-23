@@ -2,13 +2,17 @@
     <div class="todo-form">
         <!-- 标题 -->
         <div class="form-item">
-            <div class="form-label">标题</div>
-            <a-input v-model:value="localData.title" placeholder="请输入待办标题" @change="emitUpdate" />
+            <div class="form-label">{{ t('schedule.field.title') }}</div>
+            <a-input
+                v-model:value="localData.title"
+                :placeholder="t('schedule.placeholder.todoTitle')"
+                @change="emitUpdate"
+            />
         </div>
 
         <!-- 时间 -->
         <div class="form-item">
-            <div class="form-label">时间</div>
+            <div class="form-label">{{ t('schedule.field.time') }}</div>
             <a-space>
                 <a-date-picker
                     v-model:value="todoDate"
@@ -27,14 +31,14 @@
 
         <!-- 提醒 -->
         <div class="form-item">
-            <div class="form-label">提醒</div>
+            <div class="form-label">{{ t('schedule.field.reminder') }}</div>
             <a-select v-model:value="localData.reminder" style="width: 100%" @change="emitUpdate">
-                <a-select-option value="none">不提醒</a-select-option>
-                <a-select-option value="开始时">开始时</a-select-option>
-                <a-select-option value="5分钟前">5分钟前</a-select-option>
-                <a-select-option value="15分钟前">15分钟前</a-select-option>
-                <a-select-option value="30分钟前">30分钟前</a-select-option>
-                <a-select-option value="1小时前">1小时前</a-select-option>
+                <a-select-option value="none">{{ t('schedule.reminder.none') }}</a-select-option>
+                <a-select-option value="开始时">{{ t('schedule.reminder.atStart') }}</a-select-option>
+                <a-select-option value="5分钟前">{{ t('schedule.reminder.min5') }}</a-select-option>
+                <a-select-option value="15分钟前">{{ t('schedule.reminder.min15') }}</a-select-option>
+                <a-select-option value="30分钟前">{{ t('schedule.reminder.min30') }}</a-select-option>
+                <a-select-option value="1小时前">{{ t('schedule.reminder.hour1') }}</a-select-option>
             </a-select>
         </div>
     </div>
@@ -43,6 +47,9 @@
 <script setup>
 import { ref, reactive, watch } from 'vue';
 import dayjs from 'dayjs';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
     formData: { type: Object, required: true }

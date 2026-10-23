@@ -1,9 +1,9 @@
 <template>
     <div class="subscription-view">
         <div class="subscription-header">
-            <h2 class="title">全部订阅</h2>
+            <h2 class="title">{{ t('subscription.title') }}</h2>
             <div class="header-ops">
-                <a-button type="link" @click="goBack"> <left-outlined /> 返回日历 </a-button>
+                <a-button type="link" @click="goBack"> <left-outlined /> {{ t('subscription.backToCalendar') }} </a-button>
             </div>
         </div>
 
@@ -24,7 +24,7 @@
                         :class="{ 'is-subscribed': item.isSubscribed }"
                         @click="toggleSub(item.id)"
                     >
-                        {{ item.isSubscribed ? '已订阅' : '订阅' }}
+                        {{ item.isSubscribed ? t('subscription.subscribed') : t('subscription.subscribe') }}
                     </a-button>
                 </div>
             </div>
@@ -35,6 +35,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
     CloudOutlined,
     ExperimentOutlined,
@@ -48,6 +49,7 @@ import {
 import subscriptionManager from '../utils/subscriptionManager';
 
 const router = useRouter();
+const { t } = useI18n();
 const subscriptionItems = ref([]);
 
 // 映射图标组件

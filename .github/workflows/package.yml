@@ -6,6 +6,10 @@ on:
             - main
     workflow_dispatch:
 
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
 jobs:
     publish:
         permissions:
@@ -13,7 +17,13 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                platform: [macos-latest, windows-latest]
+                include:
+                    - platform: macos-latest
+                      target: aarch64-apple-darwin
+                    - platform: macos-latest
+                      target: x86_64-apple-darwin
+                    - platform: windows-latest
+                      target: x86_64-pc-windows-msvc
 
         runs-on: ${{ matrix.platform }}
         steps:
@@ -26,6 +36,8 @@ jobs:
 
             - name: install Rust stable
               uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.target }}
 
             - name: install dependencies (ubuntu only)
               if: matrix.platform == 'ubuntu-22.04'
@@ -34,14 +46,52 @@ jobs:
                   sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
 
             - name: install frontend dependencies
-              run: npm install
+              run: npm ci
+
+            - name: test update flow
+              run: node --test tests/updateController.test.js
+
+            - name: require updater signing key
+              shell: bash
+              env:
+                  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+              run: |
+                  if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+                    echo "Configure TAURI_SIGNING_PRIVATE_KEY in repository Actions secrets before publishing."
+                    exit 1
+                  fi
 
             - uses: tauri-apps/tauri-action@v0
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
               with:
+                  args: --target ${{ matrix.target }}
+                  includeUpdaterJson: true
                   tagName: v__VERSION__ # tauri-action replaces this with the app version
                   releaseName: '云小历 v__VERSION__'
-                  releaseBody: '自动生成的发行版。包含 macOS 和 Windows 安装包。'
-                  releaseDraft: false
+                  releaseBody: |
+                      云小历 v__VERSION__
+                      - 全新云朵日历 Logo 与应用图标。
+                      - 新增关于页面，支持检查更新、下载进度与安装后自动重启。
+                      - 支持中英文界面、系统时区与第二时区状态栏。
+                      - 提供 Apple Silicon / Intel Mac 和 Windows x64 安装包及签名更新文件。
+                  releaseDraft: true
                   prerelease: false
+
+    release:
+        name: Publish complete release
+        needs: publish
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v4
+            - name: publish after all platforms succeed
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_REPO: ${{ github.repository }}
+              run: |
+                  version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+                  gh release edit "v$version" --draft=false --latest
